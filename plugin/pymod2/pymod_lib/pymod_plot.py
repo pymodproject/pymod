@@ -1431,7 +1431,7 @@ def get_plotting_interval(min_val, max_val, mode="use_min_and_max"): # "expand",
         - a list of strings to be used as labels for the numbers in the above list.
     """
     # If 'True', some information regarding the linspace generation will be printed.
-    out = True
+    out = False
     # Gets the order of magnitude of the difference between min and max.
     d = max_val - min_val
     dmao = get_order_of_magnitude(d)

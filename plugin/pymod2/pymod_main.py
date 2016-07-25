@@ -1013,7 +1013,7 @@ class PyMod:
         return True
 
 
-    def execute_subprocess(self, commandline, new_stdout = subprocess.PIPE, new_stderr = subprocess.PIPE, new_shell = (sys.platform!="win32"), print_stdinfo = True, executing_modeller=False):
+    def execute_subprocess(self, commandline, new_stdout = subprocess.PIPE, new_stderr = subprocess.PIPE, new_shell = (sys.platform!="win32"), print_stdinfo = False, executing_modeller=False):
         if print_stdinfo:
             print "Executing the following command:", commandline
         if not executing_modeller:

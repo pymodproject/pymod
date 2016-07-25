@@ -87,7 +87,6 @@ class Executable_tool(Tool):
                 path_exists = True
         except:
             pass
-        print "path_exists:", path_exists
         return path_exists
 
 
