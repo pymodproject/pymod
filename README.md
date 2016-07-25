@@ -17,6 +17,6 @@ Home page: http://schubert.bio.uniroma1.it/pymod/index.html
 
 User's guide: http://schubert.bio.uniroma1.it/pymod/downloads/PyMod_Users_Guide.pdf
 
-Download Installer Bundles: http://schubert.bio.uniroma1.it/pymod/download.html
+Download Installer Bundles: https://github.com/pymodproject/pymod/releases
 
 Contact: giacomo.janson@uniroma1.it
