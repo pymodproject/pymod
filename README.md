@@ -15,7 +15,7 @@ A series of introductory tutorials and in-depth information about all the PyMod 
 
 Home page: http://schubert.bio.uniroma1.it/pymod/index.html
 
-User's guide: http://schubert.bio.uniroma1.it/pymod/downloads/PyMod_Users_Guide.pdf
+User's guide: http://schubert.bio.uniroma1.it/downloads/PyMod_Users_Guide.pdf
 
 Download Installer Bundles: https://github.com/pymodproject/pymod/releases
 
