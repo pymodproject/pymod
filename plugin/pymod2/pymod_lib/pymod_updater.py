@@ -52,9 +52,14 @@ def update_pymod(plugin_zipfile_temp_name, pymod_plugin_dir):
     """
     Called in 'pymod_main.py' in order to update the plugin files to the latest stable version.
     """
+    update_results = None
+    zfh = None
     try:
         # Unpacks the zipfile in a temp directory.
         stable_pymod_dir_temp_name = "stable_pymod_dir_temp"
+        # Needed for old Python versions lacking the 'zipfile.ZipFile.extract()' method.
+        if not os.path.isdir(stable_pymod_dir_temp_name):
+            os.mkdir(stable_pymod_dir_temp_name)
         zfh = open(plugin_zipfile_temp_name, 'rb')
         zipfile_obj = zipfile.ZipFile(zfh)
         pmos.zipfile_extract_all(zipfile_obj, stable_pymod_dir_temp_name)
@@ -71,12 +76,20 @@ def update_pymod(plugin_zipfile_temp_name, pymod_plugin_dir):
                 if os.path.isfile(os.path.join(target_dir,rpath, f)):
                     os.remove(os.path.join(target_dir,rpath, f))
                 shutil.move(os.path.join(path,f), os.path.join(target_dir,rpath, f))
-        return (True, "Update Successful")
+        update_results = (True, "Update Successful")
 
     except Exception, e:
-        # Remove temp files.
+        update_results = (False, "PyMod update failed because of the following error: %s" % e)
+
+    # Remove temp files.
+    try:
         if os.path.isfile(plugin_zipfile_temp_name):
+            if hasattr(zfh, "closed") and not zfh.closed:
+                zfh.close()
             os.remove(plugin_zipfile_temp_name)
         if os.path.isdir(stable_pymod_dir_temp_name):
             shutil.rmtree(stable_pymod_dir_temp_name)
-        return (False, "PyMod update failed because of the following error: %s" % e)
+    except:
+        pass
+
+    return update_results
