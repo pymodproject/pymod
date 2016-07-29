@@ -21,6 +21,7 @@ import platform
 import re
 import subprocess
 import shutil
+import zipfile
 import struct
 import pymol
 from pymol import cmd
@@ -351,6 +352,56 @@ def check_pymol_builtin_cealign():
         if "object" in inspect.getargspec(cmd.cealign)[0]:
             has_builtin_cealign = True
     return has_builtin_cealign
+
+
+#####################################################################
+# Archives.                                                         #
+#####################################################################
+
+def zipfile_extract_all(zipfile_obj, target_dir):
+    pyversion = sys.version[:3].replace('.','')
+    for name in zipfile_obj.namelist():
+        if int(pyversion) > 26:
+            zipfile_obj.extract(name, target_dir)
+        else:
+            custom_extract(zipfile_obj, name, target_dir)
+
+
+def custom_extract(zipfile_obj, zipped_file_name, target_dir):
+    """
+    This method emulates in Python version < 2.6 the '.extract()' method of the ZipFile class.
+    This is needed for some old PyMOL builds.
+    """
+    # Checks if the element to unzip is a directory.
+    is_dir = zipped_file_name.endswith("/")
+    new_shortcut = zipped_file_name.replace("/",os.path.sep)
+    new_path = os.path.join(target_dir, new_shortcut)
+
+    path_to_check_args = [target_dir]
+    # Builds the intermediates directories of the directory tree.
+    for subdir in new_shortcut.split(os.path.sep)[0:-1]:
+        path_to_check_args.append(subdir)
+        path_to_check = os.path.join(*path_to_check_args)
+        if os.path.exists(path_to_check):
+            if os.path.isfile(path_to_check):
+                os.remove(path_to_check)
+        else:
+            os.mkdir(path_to_check)
+    # Build the files.
+    if not is_dir:
+        if os.path.isdir(new_path):
+            shutil.rmtree(new_path)
+        unzipped_file = open(new_path, "wb")
+        unzipped_file.write(zipfile_obj.read(zipped_file_name))
+        unzipped_file.close()
+    # Build the terminal directories of the directory tree.
+    else:
+        if os.path.exists(new_path):
+            if os.path.isfile(new_path):
+                os.remove(new_path)
+                os.mkdir(new_path)
+        else:
+            os.mkdir(new_path)
 
 
 #####################################################################

@@ -89,6 +89,7 @@ from pymod_lib import pymod_vars as pmdt # PyMod data used throughout the plugin
 from pymod_lib import pymod_tool as pm_tool # Classes to represent tools used within PyMod.
 from pymod_lib import pymod_plot as pplt # Basic plots for building DOPE profiles and showing distance trees.
 from pymod_lib import pymod_sup as pmsp # Supplementary code for PyMod.
+from pymod_lib import pymod_updater as pmup # Updates PyMod fetching the latest stable version via network.
 
 # CE-alignment.
 global ce_alignment_mode
@@ -922,6 +923,8 @@ class PyMod:
         self.menubar.add_cascade(label = "Help", menu = self.help_menu)
         self.help_menu.add_command(label = "Online Documentation", command = self.open_online_documentation)
         self.help_menu.add_command(label = "About", command = self.show_about_dialog)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label = "Check for PyMod Updates", command = self.launch_pymod_update)
 
         self.main_window.config(menu = self.menubar)
 
@@ -938,7 +941,7 @@ class PyMod:
 
 
     def show_about_dialog(self):
-        Pmw.aboutversion(self.pymod_version + "-" + self.pymod_revision)
+        Pmw.aboutversion(self.pymod_version + "." + self.pymod_revision)
         Pmw.aboutcopyright('Copyright (C): 2016 Giacomo Janson, Chengxin Zhang,\nAlessandro Paiardini')
         Pmw.aboutcontact(
             'For information on PyMod %s visit:\n' % (self.pymod_version) +
@@ -954,6 +957,44 @@ class PyMod:
         webbrowser.open("http://schubert.bio.uniroma1.it/pymod/documentation.html")
 
 
+    def launch_pymod_update(self):
+        # Gets the latest release number from network.
+        try:
+            update_found = pmup.check_for_updates(self.pymod_version, self.pymod_revision)
+        except Exception, e:
+            self.show_error_message("Connection Error", "Can not obtain the latest PyMod version number beacause of the following error: '%s'" % e)
+            return False
+
+        if not update_found:
+            self.show_warning_message("Update Canceled", "Your PyMod version (%s.%s) is already up to date." % (self.pymod_version, self.pymod_revision))
+            return False
+
+        # Ask for update confirmation.
+        title = "Update PyMod?"
+        message = "Would you like to update your current PyMod version (%s.%s) to the latest stable one available online (%s)? You will need to restart PyMOL in order to use the new version." % (self.pymod_version, self.pymod_revision, update_found)
+        answer = tkMessageBox.askyesno(title, message, parent=self.main_window)
+        if not answer:
+            return False
+
+        # Fetches the latest stable version files of PyMod.
+        try:
+            plugin_zipfile_temp_name = pmup.fetch_plugin_zipfile()
+        except Exception, e:
+            self.show_error_message("Connection Error", "Can not fetch the latest PyMod files beacause of the following error: '%s'" % e)
+            return False
+
+        if not plugin_zipfile_temp_name:
+            return False
+
+        # Installs the new PyMod version.
+        pymod_plugin_dir = os.path.dirname(os.path.dirname(__file__))
+        update_results = pmup.update_pymod(plugin_zipfile_temp_name, pymod_plugin_dir)
+        if update_results[0]:
+            self.show_info_message("Update Successful", "Please restart PyMOL in order to use the updated PyMod version.")
+        else:
+            self.show_error_message("Update Failed", update_results[1])
+
+
     def show_popup_message(self, popup_type="warning", title_to_show="ALLERT", message_to_show="THIS IS AN ALLERT MESSAGE", parent_window=None, refresh=True):
         """
         Displays error or warning messages and refreshes the sequence window.
@@ -965,11 +1006,17 @@ class PyMod:
 
         if popup_type == "error":
             tkMessageBox.showerror(title_to_show, message_to_show, parent=parent_window)
+        elif popup_type == "info":
+            tkMessageBox.showinfo(title_to_show, message_to_show, parent=parent_window)
         elif popup_type == "warning":
             tkMessageBox.showwarning(title_to_show, message_to_show, parent=parent_window)
 
         if refresh:
             self.gridder()
+
+
+    def show_info_message(self, title_to_show,message_to_show,parent_window=None,refresh=True):
+        self.show_popup_message("info",title_to_show,message_to_show,parent_window,refresh)
 
 
     def show_warning_message(self, title_to_show,message_to_show,parent_window=None,refresh=True):
