@@ -6156,7 +6156,7 @@ class PyMod:
             # Build the .fasta files with the alignments.
             file_name = "cluster_" + str(i)
             children = self.get_children(cluster)
-            self.build_sequences_file(children, file_name, file_format="clustal", remove_indels=True)
+            self.build_sequences_file(children, file_name, file_format="clustal", remove_indels=False)
             self.alignments_to_join_file_list.append(file_name)
 
         # Finds the bridges.
@@ -7249,7 +7249,7 @@ class PyMod:
 
         elif file_format == "clustal":
             if remove_indels:
-                records = [SeqRecord(Seq(str(child.my_sequence)).ungap(), id=child.my_header) for child in elements]
+                records = [SeqRecord(Seq(str(child.my_sequence).replace("-","")), id=child.my_header) for child in elements]
             else:
                 records = [SeqRecord(Seq(str(child.my_sequence)), id=child.my_header) for child in elements]
             SeqIO.write(records, a_fh, "clustal")
