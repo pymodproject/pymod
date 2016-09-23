@@ -179,7 +179,7 @@ class PyMod:
         # submenu on the plugin's main menu.
         self.modeling_session_list = []
         # The maximum number of models that Modeler can produce at the same time.
-        self.max_models_per_session = 100
+        self.max_models_per_session = 1000
         self.multiple_chains_models_name = "MyMultiModel"
 
         # PSIPRED.
@@ -9725,6 +9725,16 @@ class PyMod:
             if not self.check_modeling_cluster_parameters(mc):
                 return False
 
+        # Checks if there are only correct sequences.
+        for mc in self.modeling_clusters_list:
+            if not pmsm.check_correct_sequence(mc.target.my_sequence):
+                self.modelization_parameters_error = "Target sequence '%s' contains an invalid character in its sequence (%s) and MODELLER can't modelize it." % (mc.target.my_header, pmsm.get_invalid_characters_list(mc.target.my_sequence)[0])
+                return False
+            for t in mc.templates_list:
+                if not pmsm.check_correct_sequence(t.my_sequence):
+                    self.modelization_parameters_error = "Template '%s' contains an invalid character in its sequence (%s) and MODELLER can't use it as a template." % (t.my_header, pmsm.get_invalid_characters_list(t.my_sequence)[0])
+                    return False
+
         # If each "modeling cluster" has correct parameters, when performing multiple chain modeling,
         # there are other conditions that must be satisfied.
         if len(self.modeling_clusters_list) > 1:
@@ -12583,54 +12593,56 @@ class PyMod_element: # ClusterSeq
         pymod.parent.clipboard_append(text_to_copy)
 
 
-    # TODO: Include a label with the sequence title and also an entry that displayes the index of
-    #       the residue where the position of the editor currently is.
-    #       Right now it does not check if incorrect character are supplied.
     def edit_sequence(self):
-        self.child=Toplevel(pymod.main_window)
-        self.child.resizable(0,0)
+        child=Toplevel(pymod.main_window)
+        child.resizable(0,0)
         #  self.child.geometry('400x500-10+40')
-        self.child.title("<< Edit Sequence >>")
-        self.child.config()
+        child.title("<< Edit Sequence >>")
+        child.config()
         try:
-            self.child.grab_set()
+            child.grab_set()
         except:
             pass
-        self.ch_main = Frame(self.child, background='black')
-        self.ch_main.pack(expand = YES, fill = BOTH)
+        ch_main = Frame(child, background='black')
+        ch_main.pack(expand = YES, fill = BOTH)
 
-        self.midframe = Frame(self.ch_main, background='black')
-        self.midframe.pack(side = TOP, fill = BOTH, anchor="n",
+        midframe = Frame(ch_main, background='black')
+        midframe.pack(side = TOP, fill = BOTH, anchor="n",
                               ipadx = 5, ipady = 5)
 
-        self.lowerframe = Frame(self.ch_main, background='black')
-        self.lowerframe.pack(side = BOTTOM, expand = NO, fill = Y, anchor="center",
+        lowerframe = Frame(ch_main, background='black')
+        lowerframe.pack(side = BOTTOM, expand = NO, fill = Y, anchor="center",
                               ipadx = 5, ipady = 5)
 
-        L1 = Label(self.midframe,font = "comic 12", text="", bg="black", fg= "red")
+        L1 = Label(midframe,font = "comic 12", text="", bg="black", fg= "red")
         L1.grid( row=0, column=0, sticky="e", pady=5, padx=5)
 
-        scrollbar = Scrollbar(self.midframe)
+        scrollbar = Scrollbar(midframe)
         scrollbar.grid(row=1, column=2, sticky="ns")
 
-        textarea=Text(self.midframe, yscrollcommand=scrollbar.set, font = "comic 12",
+        textarea=Text(midframe, yscrollcommand=scrollbar.set, font = "comic 12",
                       height=10, bd=0, foreground = 'black', background = 'white',
                       selectbackground='black', selectforeground='white', width = 60 )
         textarea.config(state=NORMAL)
         textarea.tag_config("normal", foreground="black")
-        textarea.insert(END, self.sequence_entry.get("1.0", END))
+        textarea.insert(END, self.my_sequence)
         textarea.grid( row=1, column=1, sticky="nw", padx=0)
 
         scrollbar.config(command=textarea.yview)
 
         def submit():
             edited_sequence = textarea.get(1.0, "end").replace('\n','').replace('\r','').replace(' ','').replace('\t','').upper()
-            self.update_element(new_sequence=edited_sequence)
+            if edited_sequence == "":
+                pymod.show_error_message("Sequence Error", "Please submit a non empty string.", parent_window=child)
+                return None
+            if not pmsm.check_correct_sequence(edited_sequence):
+                pymod.show_error_message("Sequence Error", "Please provide a sequence with only standard amino acid characters.", parent_window=child)
+                return None
+            self.my_sequence = edited_sequence
             pymod.gridder()
-            self.child.destroy()
+            child.destroy()
 
-        sub_button=Button(self.lowerframe, text="SUBMIT", command=submit,
-                                        relief="raised", borderwidth="3", bg="black", fg="white")
+        sub_button=Button(lowerframe, text="SUBMIT", command=submit, relief="raised", borderwidth="3", bg="black", fg="white")
         sub_button.pack()
 
 

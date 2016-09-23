@@ -251,6 +251,8 @@ pymol_polarity_color_name = "pymod_h_"
 #--------------------------------------------------
 
 # Containers of the letters representing amminoacids in sequences.
+protein_residues_standard = ("A","C","D","E","F","G","H","I","K","L","M","N","P","Q","R","S","T","V","W","Y")
+protein_residues_standard_set = set(protein_residues_standard)
 protein_residues = ("A","C","D","E","F","G","H","I","K","L","M","N","P","Q","R","S","T","V","W","Y","X")
 protein_residues_set = set(protein_residues)
 protein_residues_three_letters = ("ALA","CYS","ASP","GLU","PHE","GLY","HIS","ILE","LYS","LEU","MET","ASN","PRO","GLN","ARG","SER","THR","VAL","TRP","TYR")

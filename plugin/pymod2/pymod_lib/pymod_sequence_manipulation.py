@@ -1,9 +1,42 @@
 import Bio
 from Bio.pairwise2 import format_alignment
+import pymod_vars as pmdt
 
 ###################################################################################################
 # Some useful global functions used by all classes.                                               #
 ###################################################################################################
+
+def check_correct_sequence(sequence, remove_indels=True):
+    """
+    Check if string contains any characters not belonging to the standard protein residues alphabet
+    (plus the 'X' characters for heteroresidues.)
+    """
+    non_protein_character_found = False
+    if remove_indels:
+        sequence = sequence.replace("-","")
+    for c in sequence:
+        if not c in pmdt.protein_residues_set:
+            non_protein_character_found = True
+    if non_protein_character_found:
+        return False
+    else:
+        return True
+
+
+def get_invalid_characters_list(sequence, remove_indels=True):
+    """
+    Check if string contains any characters not belonging to the standard protein residues alphabet
+    (plus the 'X' characters for heteroresidues.)
+    """
+    non_protein_character_found = False
+    invalid_characters_list = []
+    if remove_indels:
+        sequence = sequence.replace("-","")
+    for c in sequence:
+        if not c in pmdt.protein_residues_set:
+            invalid_characters_list.append(c)
+    return invalid_characters_list
+
 
 def compute_sequence_identity(seq1, seq2, toss_modres = False, return_matches=False):
     """
