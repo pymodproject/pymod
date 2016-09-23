@@ -74,7 +74,7 @@ modeling_window_option_style = {"font": "comic 10",
 modeling_window_explanation = {"font": "comic 8",
                                "background": widgets_background_color,
                                "fg":'white', "anchor":"nw",
-                               "padx": 30, }
+                               "padx": 30, "justify":"left"}
 modeling_window_explanation_padless = {"font": "comic 8",
                                "background": widgets_background_color,
                                "fg":'white', "anchor":"nw",
