@@ -716,12 +716,8 @@ class PyMod:
         For development only. A the 'open_sequence_file', 'open_pdb_file' and
         'build_cluster_from_alignment_file' methods to import sequences when PyMod starts.
         """
-        self.open_pdb_file("/home/giacomo/Dropbox/sequences/structures/1UBI.pdb")
-        self.open_sequence_file("/home/giacomo/Dropbox/sequences/1UBI_mut.fasta","fasta")
-        self.open_sequence_file("/home/giacomo/uniprot1.fasta","fasta")
-        self.open_pdb_file("/home/giacomo/3oe0_bio_7tm.pdb")
-        # leafs!
-
+        pass
+        
 
     def create_main_window_panes(self):
         """
