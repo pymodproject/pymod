@@ -716,7 +716,11 @@ class PyMod:
         For development only. A the 'open_sequence_file', 'open_pdb_file' and
         'build_cluster_from_alignment_file' methods to import sequences when PyMod starts.
         """
-        pass
+        self.open_pdb_file("/home/giacomo/Dropbox/sequences/structures/1UBI.pdb")
+        self.open_sequence_file("/home/giacomo/Dropbox/sequences/1UBI_mut.fasta","fasta")
+        self.open_sequence_file("/home/giacomo/uniprot1.fasta","fasta")
+        self.open_pdb_file("/home/giacomo/3oe0_bio_7tm.pdb")
+        # leafs!
 
 
     def create_main_window_panes(self):
@@ -7686,6 +7690,234 @@ class PyMod:
 
 
     #################################################################
+    # Energy minimization using MODELLER.                           #
+    #################################################################
+
+    def energy_minimization(self, model_file_path, parameters_dict, env=None, use_hetatm=True, use_water=True):
+        model_file_directory = os.path.dirname(model_file_path)
+        model_file_name = os.path.basename(model_file_path)
+        opt_code = model_file_name[:-4]+"_optB"
+        #----------------------------------------------------
+        if self.modeller.run_internally():
+            if env == None:
+                env = modeller.environ()
+                if use_hetatm:
+                    env.io.hetatm = True
+                    if use_water:
+                        env.io.water = True
+                env.libs.topology.read(file='$(LIB)/top_heav.lib')
+                env.libs.parameters.read(file='$(LIB)/par.lib')
+
+            # This will optimize stereochemistry of a given model, including non-bonded contacts.
+            old_dynamic_coulomb = env.edat.dynamic_coulomb
+            env.edat.dynamic_coulomb = True
+            old_dynamic_lennard = env.edat.dynamic_lennard
+            env.edat.dynamic_lennard = True
+            old_contact_shell = env.edat.contact_shell
+            env.edat.contact_shell = parameters_dict["non_bonded_cutoff"]
+            mdl = complete_pdb(env, model_file_path)
+            mdl.write(file=os.path.join(model_file_directory, opt_code+'.ini'))
+            # Select all atoms:
+            atmsel = modeller.selection(mdl)
+            # Generate the restraints:
+            if parameters_dict["restraints"]["bond"]:
+                mdl.restraints.make(atmsel, restraint_type='bond', spline_on_site=False)
+            if parameters_dict["restraints"]["angle"]:
+                mdl.restraints.make(atmsel, restraint_type='angle', spline_on_site=False)
+            if parameters_dict["restraints"]["dihedral"]:
+                mdl.restraints.make(atmsel, restraint_type='dihedral', spline_on_site=False)
+            if parameters_dict["restraints"]["improper"]:
+                mdl.restraints.make(atmsel, restraint_type='improper', spline_on_site=False)
+            if parameters_dict["restraints"]["coulomb"]:
+                mdl.restraints.make(atmsel, restraint_type='coulomb', spline_on_site=False)
+            if parameters_dict["restraints"]["lj"]:
+                mdl.restraints.make(atmsel, restraint_type='lj', spline_on_site=False)
+            mdl.restraints.write(file=os.path.join(model_file_directory, opt_code+'.rsr'))
+            mpdf = atmsel.energy()
+
+            class SteepestDescent(modeller.optimizers.state_optimizer):
+                """
+                Very simple steepest descent optimizer, in Python, as reported at:
+                http://www.salilab.org/modeller/9v4/manual/node252.html
+                """
+                # Add options for our optimizer
+                _ok_keys = modeller.optimizers.state_optimizer._ok_keys + ('min_atom_shift', 'min_e_diff', 'step_size', 'max_iterations')
+                def __init__(self, step_size=0.0001, min_atom_shift=0.01, min_e_diff=1.0,
+                             # step_size=0.0001, min_atom_shift=0.01, min_e_diff=1.0,
+                             max_iterations=None, **vars):
+                    modeller.optimizers.state_optimizer.__init__(self, step_size=step_size,
+                                             min_atom_shift=min_atom_shift,
+                                             min_e_diff=min_e_diff,
+                                             max_iterations=max_iterations, **vars)
+
+                def optimize(self, atmsel, **vars):
+                    # Do normal optimization startup
+                    modeller.optimizers.state_optimizer.optimize(self, atmsel, **vars)
+                    # Get all parameters
+                    alpha = self.get_parameter('step_size')
+                    minshift = self.get_parameter('min_atom_shift')
+                    min_ediff = self.get_parameter('min_e_diff')
+                    maxit = self.get_parameter('max_iterations')
+                    # Main optimization loop
+                    state = self.get_state()
+                    (olde, dstate) = self.energy(state)
+                    while True:
+                        for i in range(len(state)):
+                            state[i] -= alpha * dstate[i]
+                        (newe, dstate) = self.energy(state)
+                        if abs(newe - olde) < min_ediff:
+                            print "Finished at step %d due to energy criterion" % self.step
+                            break
+                        elif self.shiftmax < minshift:
+                            print "Finished at step %d due to shift criterion" % self.step
+                            break
+                        elif maxit is not None and self.step >= maxit:
+                            print "Finished at step %d due to step criterion" % self.step
+                            break
+                        if newe < olde:
+                            alpha *= 2
+                        else:
+                            alpha /= 2
+                        olde = newe
+                        self.next_step()
+                    self.finish()
+
+            # Open a file to get basic stats on each optimization.
+            trcfil = file(os.path.join(model_file_directory, opt_code+'.D00000001'),'w')
+            # Create optimizer objects and set defaults for all further optimizations.
+            if parameters_dict["steepest_descent"]["use"]:
+                sd = SteepestDescent(max_iterations=parameters_dict["steepest_descent"]["cycles"]) # Optimize with our custom optimizer.
+                sd.optimize(atmsel, actions=modeller.optimizers.actions.trace(5))
+            if parameters_dict["conjugate_gradients"]["use"]:
+                cg = modeller.optimizers.conjugate_gradients(output='REPORT')
+                # Run CG on the all-atom selection; write stats every 5 steps.
+                cg.optimize(atmsel, max_iterations=parameters_dict["conjugate_gradients"]["cycles"], actions=modeller.optimizers.actions.trace(5, trcfil))
+            if parameters_dict["quasi_newton"]["use"]:
+                qn = modeller.optimizers.conjugate_gradients(output='REPORT')
+                qn.optimize(atmsel, max_iterations=parameters_dict["quasi_newton"]["cycles"], actions=modeller.optimizers.actions.trace(5, trcfil))
+            if parameters_dict["molecular_dynamics"]["use"]:
+                md = modeller.optimizers.molecular_dynamics(output='REPORT')
+                # Run MD; write out a PDB structure (called 'model_name.D9999xxxx.pdb')
+                # every 10 steps during the run, and write stats every 10 steps.
+                md.optimize(atmsel,
+                    temperature=parameters_dict["molecular_dynamics"]["temperature"],
+                    max_iterations=parameters_dict["molecular_dynamics"]["cycles"],
+                    actions=modeller.optimizers.actions.trace(10, trcfil))
+                    # actions=[modeller.optimizers.actions.write_structure(10, opt_code+'.D9999%04d.pdb'),
+                    #          modeller.optimizers.actions.trace(10, trcfil)])
+
+            mpdf = atmsel.energy()
+            mdl.write(file=os.path.join(model_file_directory, opt_code+'.pdb'))
+
+            env.edat.dynamic_lennard = old_dynamic_lennard
+            env.edat.dynamic_coulomb = old_dynamic_coulomb
+            env.edat.contact_shell = old_contact_shell
+
+            return opt_code+'.pdb'
+        #----------------------------------------------------
+
+        #####################################################
+        else:
+            optimize_script_file_path = os.path.join(model_file_directory, "optimize.py")
+            optimize_fh = open(optimize_script_file_path, "w")
+            print >> optimize_fh, "import modeller, modeller.optimizers"
+            print >> optimize_fh, "from modeller.scripts import complete_pdb"
+            print >> optimize_fh, "env = modeller.environ()"
+            if use_hetatm:
+                print >> optimize_fh, "env.io.hetatm = True"
+                if use_water:
+                    print >> optimize_fh, "env.io.water = True"
+            print >> optimize_fh, "env.edat.dynamic_sphere = True"
+            print >> optimize_fh, "env.libs.topology.read(file='$(LIB)/top_heav.lib')"
+            print >> optimize_fh, "env.libs.parameters.read(file='$(LIB)/par.lib')"
+            print >> optimize_fh, 'code = "%s"' % opt_code
+            print >> optimize_fh, 'env.edat.dynamic_coulomb = True'
+            print >> optimize_fh, 'env.edat.dynamic_lennard = True'
+            print >> optimize_fh, 'env.edat.contact_shell = %s' % parameters_dict["non_bonded_cutoff"]
+            print >> optimize_fh, 'mdl = complete_pdb(env, "%s")' % os.path.join(model_file_directory, model_file_name)
+            print >> optimize_fh, "mdl.write(file='%s')" % os.path.join(model_file_directory, opt_code+'.ini')
+            print >> optimize_fh, "atmsel = modeller.selection(mdl)"
+            # Generate the restraints:
+            if parameters_dict["restraints"]["bond"]:
+                print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='bond', spline_on_site=False)"
+            if parameters_dict["restraints"]["angle"]:
+                print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='angle', spline_on_site=False)"
+            if parameters_dict["restraints"]["dihedral"]:
+                print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='dihedral', spline_on_site=False)"
+            if parameters_dict["restraints"]["improper"]:
+                print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='improper', spline_on_site=False)"
+            if parameters_dict["restraints"]["coulomb"]:
+                print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='coulomb', spline_on_site=False)"
+            if parameters_dict["restraints"]["lj"]:
+                print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='lj', spline_on_site=False)"
+            print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='stereo', spline_on_site=False)"
+            print >> optimize_fh, "mdl.restraints.write(file='%s')" % os.path.join(model_file_directory, opt_code+'.rsr')
+            print >> optimize_fh, "mpdf = atmsel.energy()"
+            print >> optimize_fh, 'class SteepestDescent(modeller.optimizers.state_optimizer):'
+            print >> optimize_fh, '   """'
+            print >> optimize_fh, '   Very simple steepest descent optimizer, in Python, as reported at:'
+            print >> optimize_fh, '   http://www.salilab.org/modeller/9v4/manual/node252.html'
+            print >> optimize_fh, '   """'
+            print >> optimize_fh, "   _ok_keys = modeller.optimizers.state_optimizer._ok_keys + ('min_atom_shift', 'min_e_diff', 'step_size', 'max_iterations')"
+            print >> optimize_fh, "   def __init__(self, step_size=0.0001, min_atom_shift=0.01, min_e_diff=0.001, max_iterations=None, **vars):"
+            print >> optimize_fh, '       modeller.optimizers.state_optimizer.__init__(self, step_size=step_size,'
+            print >> optimize_fh, '                                min_atom_shift=min_atom_shift,'
+            print >> optimize_fh, '                                min_e_diff=min_e_diff,'
+            print >> optimize_fh, '                                max_iterations=max_iterations, **vars)'
+            print >> optimize_fh, "   def optimize(self, atmsel, **vars):"
+            print >> optimize_fh, "        modeller.optimizers.state_optimizer.optimize(self, atmsel, **vars)"
+            print >> optimize_fh, "        alpha = self.get_parameter('step_size')"
+            print >> optimize_fh, "        minshift = self.get_parameter('min_atom_shift')"
+            print >> optimize_fh, "        min_ediff = self.get_parameter('min_e_diff')"
+            print >> optimize_fh, "        maxit = self.get_parameter('max_iterations')"
+            print >> optimize_fh, "        state = self.get_state()"
+            print >> optimize_fh, "        (olde, dstate) = self.energy(state)"
+            print >> optimize_fh, "        while True:"
+            print >> optimize_fh, "            for i in range(len(state)):"
+            print >> optimize_fh, "                state[i] -= alpha * dstate[i]"
+            print >> optimize_fh, "            (newe, dstate) = self.energy(state)"
+            print >> optimize_fh, "            if abs(newe - olde) < min_ediff:"
+            print >> optimize_fh, '                print "Finished at step" + str(self.step) + "due to energy criterion"'
+            print >> optimize_fh, '                break'
+            print >> optimize_fh, '            elif self.shiftmax < minshift:'
+            print >> optimize_fh, '                print "Finished at step" + str(self.step) + "due to shift criterion"'
+            print >> optimize_fh, '                break'
+            print >> optimize_fh, '            elif maxit is not None and self.step >= maxit:'
+            print >> optimize_fh, '                print "Finished at step" + str(self.step) + "due to step criterion"'
+            print >> optimize_fh, '                break'
+            print >> optimize_fh, '            if newe < olde:'
+            print >> optimize_fh, '                alpha *= 2'
+            print >> optimize_fh, '            else:'
+            print >> optimize_fh, '                alpha /= 2'
+            print >> optimize_fh, '            olde = newe'
+            print >> optimize_fh, '            self.next_step()'
+            print >> optimize_fh, '        self.finish()'
+            print >> optimize_fh, "trcfil = file('%s','w')" % os.path.join(model_file_directory, opt_code+'.D00000001')
+            if parameters_dict["steepest_descent"]["use"]:
+                print >> optimize_fh, "sd = SteepestDescent(max_iterations=%s)" % parameters_dict["steepest_descent"]["cycles"]
+                print >> optimize_fh, "sd.optimize(atmsel, actions=modeller.optimizers.actions.trace(5))"
+            if parameters_dict["conjugate_gradients"]["use"]:
+                print >> optimize_fh, "cg = modeller.optimizers.conjugate_gradients(output='REPORT')"
+                print >> optimize_fh, "cg.optimize(atmsel, max_iterations=%s, actions=modeller.optimizers.actions.trace(5, trcfil))" % parameters_dict["conjugate_gradients"]["cycles"]
+            if parameters_dict["quasi_newton"]["use"]:
+                print >> optimize_fh, "qn = modeller.optimizers.conjugate_gradients(output='REPORT')"
+                print >> optimize_fh, "qn.optimize(atmsel, max_iterations=%s, actions=modeller.optimizers.actions.trace(5, trcfil))" % parameters_dict["quasi_newton"]["cycles"]
+            if parameters_dict["molecular_dynamics"]["use"]:
+                print >> optimize_fh, "md = modeller.optimizers.molecular_dynamics(output='REPORT')"
+                print >> optimize_fh, "md.optimize(atmsel, temperature=%s, max_iterations=%s, actions=modeller.optimizers.actions.trace(10, trcfil))" % (parameters_dict["molecular_dynamics"]["temperature"], parameters_dict["molecular_dynamics"]["cycles"])
+            print >> optimize_fh, "mpdf = atmsel.energy()"
+            print >> optimize_fh, "mdl.write(file='%s')" % os.path.join(model_file_directory, opt_code+'.pdb')
+            optimize_fh.close()
+            cline= "%s %s" % (self.modeller.get_exe_file_path(), optimize_script_file_path)
+            self.execute_subprocess(cline, executing_modeller=True)
+            os.remove(optimize_script_file_path)
+        #####################################################
+
+        return opt_code+'.pdb'
+
+
+
+    #################################################################
     # Ramachandran plot.                                            #
     #################################################################
 
@@ -8593,13 +8825,19 @@ class PyMod:
         self.options_frame = self.options_scrolled_frame.interior()
         self.options_frame.configure(bd=0,pady=20)
 
+        grid_widgets = True
+        self.options_frame_grid_options = {"padx": 10, "pady": 10, "sticky": "w"}
         # Start to insert modeling options widgets.
         option_widgets_to_align = []
         # Option to chose the number of models that Modeller has to produce.
         self.max_models_enf = pmgi.PyMod_entryfield(
             self.options_frame, label_text = "Models to Build", value = 1,
             validate = {'validator' : 'integer', 'min' : 1, 'max' : self.max_models_per_session})
-        self.max_models_enf.pack(**pmgi.pack_options_1)
+        if grid_widgets:
+            self.max_models_enf.grid(row=0, **self.options_frame_grid_options)
+        else:
+            self.max_models_enf.pack(**pmgi.pack_options_1)
+
         option_widgets_to_align.append(self.max_models_enf)
 
         # Option to choose if Modeller is going to include HETATMs.
@@ -8607,7 +8845,10 @@ class PyMod:
         for choice in ("Yes", "No"):
             self.exclude_heteroatoms_rds.add(choice)
         self.exclude_heteroatoms_rds.setvalue("No")
-        self.exclude_heteroatoms_rds.pack(**pmgi.pack_options_1)
+        if grid_widgets:
+            self.exclude_heteroatoms_rds.grid(row=1, **self.options_frame_grid_options)
+        else:
+            self.exclude_heteroatoms_rds.pack(**pmgi.pack_options_1)
         option_widgets_to_align.append(self.exclude_heteroatoms_rds)
         self.exclude_heteroatoms_rds.button(0).configure(command=lambda: self.switch_all_hetres_checkbutton_states(0)) # Yes, inactivate.
         self.exclude_heteroatoms_rds.button(1).configure(command=lambda: self.switch_all_hetres_checkbutton_states(1)) # No, activate.
@@ -8618,16 +8859,41 @@ class PyMod:
         for choice in self.optimization_level_choices:
             self.optimization_level_rds.add(choice)
         self.optimization_level_rds.setvalue("None")
-        self.optimization_level_rds.pack(**pmgi.pack_options_1)
+        if grid_widgets:
+            self.optimization_level_rds.grid(row=2, **self.options_frame_grid_options)
+        else:
+            self.optimization_level_rds.pack(**pmgi.pack_options_1)
         option_widgets_to_align.append(self.optimization_level_rds)
+
+        # Option to choose the level of additional energy optimization.
+        self.energy_minimization_choices = ("None", "Use")
+        self.energy_minimization_rds = pmgi.PyMod_radioselect(self.options_frame, label_text = 'Additional Energy Minimization')
+        for choice in self.energy_minimization_choices:
+            self.energy_minimization_rds.add(choice)
+        self.energy_minimization_rds.setvalue("None")
+        if grid_widgets:
+            self.energy_minimization_rds.grid(row=3, **self.options_frame_grid_options)
+        else:
+            self.energy_minimization_rds.pack(**pmgi.pack_options_1)
+        self.energy_minimization_rds.button(0).configure(command=self.hide_energy_minimization_frame)
+        self.energy_minimization_rds.button(1).configure(command=self.show_energy_minimization_frame)
+        option_widgets_to_align.append(self.energy_minimization_rds)
+        self.energy_minimization_frame = pmgi.Energy_minimization_frame(self.options_frame)
+        # if grid_widgets:
+        #     self.energy_minimization_frame.grid(row=4, **self.options_frame_grid_options)
+        # else:
+        #     self.energy_minimization_frame.pack()
 
         # Option to choose the way to color the models.
         self.color_models_choices = ("Default", "DOPE Score") # Delta DOPE e b-factor
-        self.color_models_rds = pmgi.PyMod_radioselect(self.options_frame, label_text = 'Color models by')
+        self.color_models_rds = pmgi.PyMod_radioselect(self.options_frame, label_text = 'Color Models by')
         for choice in self.color_models_choices:
             self.color_models_rds.add(choice)
         self.color_models_rds.setvalue("Default")
-        self.color_models_rds.pack(**pmgi.pack_options_1)
+        if grid_widgets:
+            self.color_models_rds.grid(row=5, **self.options_frame_grid_options)
+        else:
+            self.color_models_rds.pack(**pmgi.pack_options_1)
         option_widgets_to_align.append(self.color_models_rds)
 
         # Option to choose whether to super models to template.
@@ -8635,10 +8901,24 @@ class PyMod:
         for choice in ("Yes", "No"):
             self.superpose_models_to_templates_rds.add(choice)
         self.superpose_models_to_templates_rds.setvalue("Yes")
-        self.superpose_models_to_templates_rds.pack(**pmgi.pack_options_1)
+        if grid_widgets:
+            self.superpose_models_to_templates_rds.grid(row=6, **self.options_frame_grid_options)
+        else:
+            self.superpose_models_to_templates_rds.pack(**pmgi.pack_options_1)
         option_widgets_to_align.append(self.superpose_models_to_templates_rds)
 
         pmgi.align_set_of_widgets(option_widgets_to_align)
+
+
+    def show_energy_minimization_frame(self):
+        self.energy_minimization_frame.grid(row=4, padx= (25,0), pady= 10, sticky= "w")
+        self.energy_minimization_rds.setvalue("Use")
+        self.options_scrolled_frame.reposition()
+
+    def hide_energy_minimization_frame(self):
+        self.energy_minimization_frame.grid_forget()
+        self.energy_minimization_rds.setvalue("None")
+        self.options_scrolled_frame.reposition()
 
 
     def perform_modelization(self):
@@ -8646,6 +8926,26 @@ class PyMod:
         This method is called when the 'SUBMIT' button in the modelization window is pressed. It
         contains the code to instruct Modeller on how to perform the modelization.
         """
+        try:
+            self._perform_modelization()
+        except Exception, e:
+            self.modeling_session_failure(e)
+
+
+    def modeling_session_failure(self, error_message):
+        try:
+            title = "Modeling Session Error"
+            message = "PyMod has encountered the following error while running MODELLER: %s" % error_message
+            self.show_error_message(title, message)
+            if os.path.isdir(self.model_subdir):
+                shutil.rmtree(self.model_subdir)
+        except:
+            self.show_error_message("Modeling Session Error", "PyMod has encountered an unknown error in the modeling session: %s" % error_message)
+        os.chdir(self.current_project_directory_full_path)
+
+
+    def _perform_modelization(self):
+
         # -----
         # Takes input supplied by users though the GUI.
         # -----
@@ -8653,16 +8953,36 @@ class PyMod:
         self.build_templates_list()
 
         # Starts the modeling process only if the user has supplied correct parameters.
+        self.exclude_hetatms = self.exclude_heteroatoms_rds.getvalue()
+        self.optimization_level = self.optimization_level_rds.getvalue()
+        self.additional_optimization_level = self.energy_minimization_rds.getvalue()
+        if self.additional_optimization_level == "Use":
+            try:
+                nb_cutoff = float(self.energy_minimization_frame.non_bondend_cutoff_rds.getvalue())
+            except:
+                nb_cutoff = 4.0
+            self.additional_optimization_dict = {
+                "steepest_descent": {"use": self.energy_minimization_frame.steepest_descent_frame.use_var.get(), "cycles": int(self.energy_minimization_frame.steepest_descent_frame.iterations_enf.getvalue())},
+                "conjugate_gradients": {"use": self.energy_minimization_frame.conjugate_gradients_frame.use_var.get(), "cycles": int(self.energy_minimization_frame.conjugate_gradients_frame.iterations_enf.getvalue())},
+                "quasi_newton": {"use": self.energy_minimization_frame.quasi_newton_frame.use_var.get(), "cycles": int(self.energy_minimization_frame.quasi_newton_frame.iterations_enf.getvalue())},
+                "molecular_dynamics": {"use": self.energy_minimization_frame.md_frame.use_var.get(), "cycles": int(self.energy_minimization_frame.md_frame.iterations_enf.getvalue()), "temperature": int(self.energy_minimization_frame.md_frame.temperature_enf.getvalue())},
+                "restraints": {"bond": self.energy_minimization_frame.bonds_checkbutton.getvalue(),
+                               "angle": self.energy_minimization_frame.angles_checkbutton.getvalue(),
+                               "dihedral": self.energy_minimization_frame.dihedrals_checkbutton.getvalue(),
+                               "improper": self.energy_minimization_frame.impropers_checkbutton.getvalue(),
+                               "coulomb": self.energy_minimization_frame.lj_checkbutton.getvalue(),
+                               "lj": self.energy_minimization_frame.coulomb_checkbutton.getvalue()},
+               "non_bonded_cutoff": nb_cutoff}
+        self.superpose_to_templates = self.superpose_models_to_templates_rds.getvalue()
+        self.color_by_dope_choice = self.color_models_rds.getvalue()
+
         if not self.check_all_modelization_parameters():
             # "Please Fill all the Fields"
             title = "Input Error"
             message = self.modelization_parameters_error
             self.show_error_message(title, message, self.modeling_window, refresh=False)
             return False
-        self.exclude_hetatms = self.exclude_heteroatoms_rds.getvalue()
-        self.optimization_level = self.optimization_level_rds.getvalue()
-        self.superpose_to_templates = self.superpose_models_to_templates_rds.getvalue()
-        self.color_by_dope_choice = self.color_models_rds.getvalue()
+
         # The modeling window can be destroyed.
         self.modeling_window.destroy()
 
@@ -8699,6 +9019,7 @@ class PyMod:
         model_subdir_name = "%s_%s_%s" % (self.models_subdirectory, self.performed_modeling_count, self.modeller_target_name)
         # The absolute path of the model subdirectory.
         model_subdir = os.path.join(models_dir, model_subdir_name)
+        self.model_subdir = model_subdir
         self.create_model_subdirectory(model_subdir)
 
         # The current directory has to be changed beacause in Modeller the user can't change the
@@ -9015,9 +9336,9 @@ class PyMod:
         #------------------------------------------------------------
         if self.modeller.run_internally():
             a = MyModel(env,
-                        alnfile = os.path.join(model_subdir, "align-multiple.ali"), # alignment filename
-                        knowns = tuple(self.all_templates_namelist),                # codes of the templates
-                        sequence = self.modeller_target_name)                       # code of the target
+                        alnfile = os.path.join(model_subdir, "align-multiple.ali"),          # alignment filename
+                        knowns = tuple([str(tmpn) for tmpn in self.all_templates_namelist]), # codes of the templates
+                        sequence = self.modeller_target_name)                                # code of the target
                         #, assess_methods=(modeller.automodel.assess.DOPE))
         #------------------------------------------------------------
 
@@ -9026,7 +9347,7 @@ class PyMod:
             print >> self.modeller_script, "a =  MyModel("
             print >> self.modeller_script, "    env,"
             print >> self.modeller_script, "    alnfile =  'align-multiple.ali',"
-            print >> self.modeller_script, "    knowns = " + repr(tuple(self.all_templates_namelist)) + ","
+            print >> self.modeller_script, "    knowns = " + repr(tuple([str(tmpn) for tmpn in self.all_templates_namelist])) + ","
             print >> self.modeller_script, "    sequence = '%s')" % (self.modeller_target_name)
         #############################################################
 
@@ -9146,6 +9467,15 @@ class PyMod:
         self.models_file_name_dictionary = {}
         model_file_number = 1
         for model in a.outputs:
+
+            # Perform additional energy minimization.
+            if self.additional_optimization_level == "Use":
+                model['name'] = self.energy_minimization(model_file_path=os.path.join(model_subdir, model['name']),
+                                                         parameters_dict=self.additional_optimization_dict,
+                                                         env=env,
+                                                         use_hetatm = self.exclude_hetatms == "No",
+                                                         use_water=found_water)
+
             ###########################################################################
             # Builds Structure objects for each of the model's chains and loads their #
             # structures in PyMOL.                                                    #
@@ -9390,10 +9720,6 @@ class PyMod:
                 - if there is exactly 1 template complex chain selected in each cluster
                 - if symmetry restraints buttons are selected properly
         """
-        # Checks if a correct value in the max models entry has been supplied.
-        if not self.check_max_model_entry_input():
-            return False
-
         # Checks if the parameters of all the "modeling clusters" are correct.
         for mc in self.modeling_clusters_list:
             if not self.check_modeling_cluster_parameters(mc):
@@ -9437,6 +9763,14 @@ class PyMod:
             if not self.check_symmetry_vars():
                 return False
 
+        # Checks if a correct value in the max models entry has been supplied.
+        if not self.check_max_model_entry_input():
+            return False
+
+        if self.additional_optimization_level == "Use":
+            if not self.check_energy_minimization_parameters():
+                return False
+
         # Returns 'True' only if all parameters are correct.
         return True
 
@@ -9451,6 +9785,23 @@ class PyMod:
             return False
         else:
             return True
+
+
+    def check_energy_minimization_parameters(self):
+        if False in [frame.check_parameters() for frame in self.energy_minimization_frame.minimization_algorithms_frames]:
+            self.modelization_parameters_error = "Invalid parameters in the Additional Energy Minimization Options!"
+            return False
+        if not 1 in [frame.use_var.get() for frame in self.energy_minimization_frame.minimization_algorithms_frames]:
+            self.modelization_parameters_error = "Please select at least one Additional Energy Minimization algorithm!"
+            return False
+        if not 1 in [checkbutton.getvalue() for checkbutton in self.energy_minimization_frame.list_of_parameters_checkbuttons]:
+            self.modelization_parameters_error = "Please select at least one feature to minimize!"
+            return False
+        if 1 in [self.energy_minimization_frame.lj_checkbutton.getvalue(), self.energy_minimization_frame.coulomb_checkbutton.getvalue()]:
+            if self.energy_minimization_frame.non_bondend_cutoff_rds.getvalue() == "":
+                self.modelization_parameters_error = "Please insert a non bonded cutoff value!"
+                return False
+        return True
 
 
     def check_modeling_cluster_parameters(self, modeling_cluster):
@@ -9833,53 +10184,6 @@ class PyMod:
         else:
             self.modeling_clusters_list[0].target.models_count += 1
 
-
-###################################################################################################
-# Other classes.                                                                                  #
-###################################################################################################
-class MODELLER_run:
-
-    def __init__(self, mode="both"):
-        self.mode = mode
-
-    def build_script_file(self, script_absolute_path):
-        self.script_absolute_path = script_absolute_path
-        self.modeller_script = open(self.script_absolute_path, "w")
-        self.modeller_script_content = ""
-
-    def add_command(self, line, tabs=0):
-        line = "    "*tabs + line + "\n"
-        self.modeller_script_content += line
-
-    def end_script(self):
-        print >> self.modeller_script, self.modeller_script_content
-        self.modeller_script.close()
-
-    def run_script(self):
-        if self.mode == "interal" or self.mode == "both":
-            print self.modeller_script_content
-            exec self.modeller_script_content
-        elif self.mode == "external":
-            execfile(self.script_absolute_path)
-
-    def change_stdout(self):
-        """
-        This is needed to create a log file also on Linux.
-        """
-        from cStringIO import StringIO
-        self.old_stdout = sys.stdout
-        self.mystdout = StringIO()
-        sys.stdout = self.mystdout
-
-    def revert_stdout_and_build_log_file(self):
-        """
-        Gets Modeller output text and prints it to a .log file.
-        """
-        sys.stdout = self.old_stdout
-        t = self.mystdout.getvalue()
-        f = open("modeller_log.txt","w")
-        f.write(t)
-        f.close()
 
 #####################################################################
 # Classes for the graphical user interface.                         #

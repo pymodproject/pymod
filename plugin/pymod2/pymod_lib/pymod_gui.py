@@ -74,7 +74,11 @@ modeling_window_option_style = {"font": "comic 10",
 modeling_window_explanation = {"font": "comic 8",
                                "background": widgets_background_color,
                                "fg":'white', "anchor":"nw",
-                               "padx": 30, "justify":"left"}
+                               "padx": 30, }
+modeling_window_explanation_padless = {"font": "comic 8",
+                               "background": widgets_background_color,
+                               "fg":'white', "anchor":"nw",
+                               "justify":"left"}
 
 modeling_window_rb_big = {"bg":widgets_background_color,
                           "highlightbackground":widgets_background_color,
@@ -1205,6 +1209,126 @@ class User_disulfide_combo:
         self.cys2_label.destroy()
         self.remove_disulfides_button.destroy()
         return self.text1, self.text2
+
+
+#####################################################################
+# Models energy minimization options.                               #
+#####################################################################
+class Energy_minimization_common:
+    restraints_ckb_grid_options = {"sticky":"nw", "padx":10, "pady":2}
+    minimization_checkbutton = {"background": widgets_background_color,
+                                "foreground": "white", "selectcolor": "red",
+                                "highlightbackground": 'black', "font": "comic 8"}
+
+class Energy_minimization_frame(PyMod_frame, Energy_minimization_common):
+
+    def __init__(self, parent = None, borderwidth=1, relief='groove', pady=5, **configs):
+        PyMod_frame.__init__(self, parent, borderwidth=borderwidth, relief=relief, pady=pady, **configs)
+
+        #--------------------------
+        # Minimization protocols. -
+        #--------------------------
+        self.title_label = Label(self, text= "Perform Additional Cycles of Energy Minimization", **modeling_window_option_style)
+        self.title_label.pack(side="top", anchor="nw")
+        self.steepest_descent_frame = Energy_optimizer_frame(self, minimization_algorithm="Steepest Descent", initial_state=1, initial_cycles=80)
+        self.steepest_descent_frame.pack(**pack_options_1)
+        self.conjugate_gradients_frame = Energy_optimizer_frame(self, minimization_algorithm="Conjugate Gradients", initial_state=1, initial_cycles=20)
+        self.conjugate_gradients_frame.pack(**pack_options_1)
+        self.quasi_newton_frame = Energy_optimizer_frame(self, minimization_algorithm="Quasi Newton", initial_state=0, initial_cycles=20)
+        self.quasi_newton_frame.pack(**pack_options_1)
+        self.md_frame = Md_optimizer_frame(self, minimization_algorithm="Molecular Dynamics", initial_state=0, initial_cycles=50)
+        self.md_frame.pack(**pack_options_1)
+
+        self.minimization_algorithms_frames = [self.steepest_descent_frame,
+                                               self.conjugate_gradients_frame,
+                                               self.quasi_newton_frame,
+                                               self.md_frame]
+
+        #--------------------------
+        # Restranints to satisfy. -
+        #--------------------------
+        self.parameters_title = Label(self, text= "Select Components to Mimimize", **modeling_window_option_style)
+        self.parameters_title.pack(side="top", anchor="nw")
+        self.components_frame = PyMod_frame(self)
+        self.components_frame.pack(side="top", anchor="nw")
+
+        self.bonds_checkbutton = Restraint_checkbutton(self.components_frame, value=1, text="Bonds", **self.minimization_checkbutton)
+        self.bonds_checkbutton.grid(row=0, column=0, **self.restraints_ckb_grid_options)
+        self.angles_checkbutton = Restraint_checkbutton(self.components_frame, value=1, text="Angles", **self.minimization_checkbutton)
+        self.angles_checkbutton.grid(row=1, column=0, **self.restraints_ckb_grid_options)
+        self.dihedrals_checkbutton = Restraint_checkbutton(self.components_frame, value=1, text="Dihedrals", **self.minimization_checkbutton)
+        self.dihedrals_checkbutton.grid(row=2, column=0, **self.restraints_ckb_grid_options)
+        self.impropers_checkbutton = Restraint_checkbutton(self.components_frame, value=1, text="Impropers", **self.minimization_checkbutton)
+        self.impropers_checkbutton.grid(row=3, column=0, **self.restraints_ckb_grid_options)
+
+        self.lj_checkbutton = Restraint_checkbutton(self.components_frame, value=1, text="Lennard-Jones", **self.minimization_checkbutton)
+        self.lj_checkbutton.grid(row=0, column=1, **self.restraints_ckb_grid_options)
+        self.coulomb_checkbutton = Restraint_checkbutton(self.components_frame, value=1, text="Coulomb", **self.minimization_checkbutton)
+        self.coulomb_checkbutton.grid(row=1, column=1, **self.restraints_ckb_grid_options)
+
+
+        self.list_of_parameters_checkbuttons = [self.bonds_checkbutton,
+                                                self.angles_checkbutton,
+                                                self.dihedrals_checkbutton,
+                                                self.impropers_checkbutton,
+                                                self.lj_checkbutton,
+                                                self.coulomb_checkbutton]
+
+        self.non_bondend_cutoff_rds = Pmw.EntryField(self.components_frame, value = 4.0,
+                                                     label_text = "Non Bonded Cutoff (%s):" % (u"\u212B"), labelpos = "w",
+                                                     validate = {'validator' : 'real', 'min' : 1.0, 'max' : 250.0})
+        self.non_bondend_cutoff_rds.grid(row=2, column=1, sticky="nw", padx=(15,0), pady=2)
+        self.non_bondend_cutoff_rds.component("label").configure(**modeling_window_explanation_padless)
+        self.non_bondend_cutoff_rds.component("entry").configure(width=4)
+
+
+class Restraint_checkbutton(Checkbutton):
+
+    def __init__(self, parent, value=1, **configs):
+        self.var = IntVar()
+        self.var.set(value)
+        Checkbutton.__init__(self, parent, variable=self.var, **configs)
+
+    def getvalue(self):
+        return self.var.get()
+
+
+class Energy_optimizer_frame(PyMod_frame, Energy_minimization_common):
+    def __init__(self, parent = None, minimization_algorithm=None, additional_information="", initial_state=0, initial_cycles=1, **configs):
+        PyMod_frame.__init__(self, parent, **configs)
+        self.minimization_algorithm = minimization_algorithm
+        self.additional_information = additional_information
+        self.use_var = IntVar()
+        self.use_var.set(initial_state)
+        self.checkbutton = Checkbutton(self, text="Do ", variable=self.use_var, **self.minimization_checkbutton)
+        self.checkbutton.pack(side="left")
+        self.iterations_enf = Pmw.EntryField(self, value = initial_cycles, labelpos = None,
+                                             validate = {'validator' : 'integer', 'min' : 1, 'max' : 1000})
+        self.iterations_enf.component("entry").configure(width = 4)
+        self.iterations_enf.pack(side="left")
+        self.algorithm_label = Label(self, text= " Steps of %s %s" % (self.minimization_algorithm, self.additional_information), **modeling_window_explanation_padless)
+        self.algorithm_label.pack(side="left")
+
+    def check_parameters(self):
+        if self.iterations_enf.getvalue() != "":
+            return True
+        else:
+            return False
+
+
+class Md_optimizer_frame(Energy_optimizer_frame):
+    def __init__(self, parent = None, minimization_algorithm=None, additional_information="at temparature (K): ", initial_state=0, initial_cycles=1, **configs):
+        Energy_optimizer_frame.__init__(self, parent = parent, minimization_algorithm=minimization_algorithm, additional_information=additional_information, initial_state=initial_state, initial_cycles=initial_cycles, **configs)
+        self.temperature_enf = Pmw.EntryField(self, value = 293, labelpos = None,
+                                              validate = {'validator' : 'integer', 'min' : 1, 'max' : 1000})
+        self.temperature_enf.component("entry").configure(width = 4)
+        self.temperature_enf.pack(side="left")
+
+    def check_parameters(self):
+        if self.iterations_enf.getvalue() != "" and self.temperature_enf.getvalue():
+            return True
+        else:
+            return False
 
 
 ###################################################################################################
