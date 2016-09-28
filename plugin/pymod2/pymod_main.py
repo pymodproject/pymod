@@ -717,7 +717,7 @@ class PyMod:
         'build_cluster_from_alignment_file' methods to import sequences when PyMod starts.
         """
         pass
-        
+
 
     def create_main_window_panes(self):
         """
@@ -990,7 +990,7 @@ class PyMod:
         pymod_plugin_dir = os.path.dirname(os.path.dirname(__file__))
         update_results = pmup.update_pymod(plugin_zipfile_temp_name, pymod_plugin_dir)
         if update_results[0]:
-            self.show_info_message("Update Successful", "Please restart PyMOL in order to use the updated PyMod version.")
+            self.show_info_message("Update Successful", "PyMod has been updated to version %s. Please restart PyMOL in order to use the updated PyMod version." % (update_found))
         else:
             self.show_error_message("Update Failed", update_results[1])
 
@@ -7738,9 +7738,7 @@ class PyMod:
                 """
                 # Add options for our optimizer
                 _ok_keys = modeller.optimizers.state_optimizer._ok_keys + ('min_atom_shift', 'min_e_diff', 'step_size', 'max_iterations')
-                def __init__(self, step_size=0.0001, min_atom_shift=0.01, min_e_diff=1.0,
-                             # step_size=0.0001, min_atom_shift=0.01, min_e_diff=1.0,
-                             max_iterations=None, **vars):
+                def __init__(self, step_size=0.0001, min_atom_shift=0.01, min_e_diff=1.0, max_iterations=None, **vars):
                     modeller.optimizers.state_optimizer.__init__(self, step_size=step_size,
                                              min_atom_shift=min_atom_shift,
                                              min_e_diff=min_e_diff,
@@ -7855,7 +7853,7 @@ class PyMod:
             print >> optimize_fh, '   http://www.salilab.org/modeller/9v4/manual/node252.html'
             print >> optimize_fh, '   """'
             print >> optimize_fh, "   _ok_keys = modeller.optimizers.state_optimizer._ok_keys + ('min_atom_shift', 'min_e_diff', 'step_size', 'max_iterations')"
-            print >> optimize_fh, "   def __init__(self, step_size=0.0001, min_atom_shift=0.01, min_e_diff=0.001, max_iterations=None, **vars):"
+            print >> optimize_fh, "   def __init__(self, step_size=0.0001, min_atom_shift=0.01, min_e_diff=1.0, max_iterations=None, **vars):"
             print >> optimize_fh, '       modeller.optimizers.state_optimizer.__init__(self, step_size=step_size,'
             print >> optimize_fh, '                                min_atom_shift=min_atom_shift,'
             print >> optimize_fh, '                                min_e_diff=min_e_diff,'
@@ -8850,11 +8848,11 @@ class PyMod:
         self.exclude_heteroatoms_rds.button(1).configure(command=lambda: self.switch_all_hetres_checkbutton_states(1)) # No, activate.
 
         # Option to choose the level of optimization for Modeller.
-        self.optimization_level_choices = ("None", "Low", "Mid", "High")
+        self.optimization_level_choices = ("Low", "Default", "Mid", "High")
         self.optimization_level_rds = pmgi.PyMod_radioselect(self.options_frame, label_text = 'Optimization Level')
         for choice in self.optimization_level_choices:
             self.optimization_level_rds.add(choice)
-        self.optimization_level_rds.setvalue("None")
+        self.optimization_level_rds.setvalue("Default")
         if grid_widgets:
             self.optimization_level_rds.grid(row=2, **self.options_frame_grid_options)
         else:
@@ -9350,9 +9348,6 @@ class PyMod:
         # ---
         # Sets other Modeller options and finally build the model.
         # ---
-        if self.optimization_level == "None":
-            pass
-
         if self.optimization_level == "Low":
             #--------------------------------------------------------
             if self.modeller.run_internally():
@@ -9368,15 +9363,23 @@ class PyMod:
                 print >> self.modeller_script, "a.md_level = modeller.automodel.refine.very_fast"
             #########################################################
 
+        elif self.optimization_level == "Default":
+            # a.library_schedule = modeller.automodel.autosched.normal
+            # a.max_var_iterations = 200
+            # a.md_level = modeller.automodel.refine.very_fast
+            # a.repeat_optimization = 2
+            # a.max_molpdf = 1e7
+            pass
+
         elif self.optimization_level == "Mid":
             #--------------------------------------------------------
             if self.modeller.run_internally():
                 # Thorough VTFM optimization:
                 a.library_schedule = modeller.automodel.autosched.fast
                 a.max_var_iterations = 300
-                # Thorough MD optimization:
+                # Mid MD optimization:
                 a.md_level = modeller.automodel.refine.fast
-                # Repeat the whole cycle 2 times and do not stop unless obj.func. > 1E6
+                # Repeat the whole cycle 2 times.
                 a.repeat_optimization = 2
             #--------------------------------------------------------
 
@@ -9565,7 +9568,6 @@ class PyMod:
         # Finish to clean up.
         if self.superpose_to_templates and len(self.modeling_clusters_list) > 1:
             cmd.delete(tc_temp_pymol_name)
-
 
         #####################################
         # Quality assessment of the models. #
@@ -10309,9 +10311,10 @@ class Parsed_pdb_file:
         structure.
         """
         pdb_file_shortcut = os.path.join(pymod.structures_directory, self.copied_pdb_file_name)
-        # Do not copy the file if it already exists in the project folder.
-        if not os.path.isfile(pdb_file_shortcut):
-            shutil.copy(self.original_file_full_path, pdb_file_shortcut)
+        # Overwrite the file if it already exists in the project folder.
+        if os.path.isfile(pdb_file_shortcut):
+            os.remove(pdb_file_shortcut)
+        shutil.copy(self.original_file_full_path, pdb_file_shortcut)
 
 
     def parse_pdb_file(self):

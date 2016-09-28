@@ -1274,12 +1274,13 @@ class Energy_minimization_frame(PyMod_frame, Energy_minimization_common):
                                                 self.lj_checkbutton,
                                                 self.coulomb_checkbutton]
 
-        self.non_bondend_cutoff_rds = Pmw.EntryField(self.components_frame, value = 4.0,
-                                                     label_text = "Non Bonded Cutoff (%s):" % (u"\u212B"), labelpos = "w",
+        self.non_bondend_cutoff_rds = Pmw.EntryField(self.components_frame, value = 10.0,
+                                                     label_text = "Non Bonded Cutoff (%s): " % (u"\u212B"), labelpos = "w",
                                                      validate = {'validator' : 'real', 'min' : 1.0, 'max' : 250.0})
         self.non_bondend_cutoff_rds.grid(row=2, column=1, sticky="nw", padx=(15,0), pady=2)
-        self.non_bondend_cutoff_rds.component("label").configure(**modeling_window_explanation_padless)
         self.non_bondend_cutoff_rds.component("entry").configure(width=4)
+        self.non_bondend_cutoff_rds.component("label").configure(bd=0, **modeling_window_explanation_padless)
+        self.non_bondend_cutoff_rds.component("hull").configure(bd=0, background="black", highlightbackground="black")
 
 
 class Restraint_checkbutton(Checkbutton):
@@ -1300,13 +1301,13 @@ class Energy_optimizer_frame(PyMod_frame, Energy_minimization_common):
         self.additional_information = additional_information
         self.use_var = IntVar()
         self.use_var.set(initial_state)
-        self.checkbutton = Checkbutton(self, text="Do ", variable=self.use_var, **self.minimization_checkbutton)
+        self.checkbutton = Checkbutton(self, text="Perform ", variable=self.use_var, **self.minimization_checkbutton)
         self.checkbutton.pack(side="left")
         self.iterations_enf = Pmw.EntryField(self, value = initial_cycles, labelpos = None,
                                              validate = {'validator' : 'integer', 'min' : 1, 'max' : 1000})
         self.iterations_enf.component("entry").configure(width = 4)
         self.iterations_enf.pack(side="left")
-        self.algorithm_label = Label(self, text= " Steps of %s %s" % (self.minimization_algorithm, self.additional_information), **modeling_window_explanation_padless)
+        self.algorithm_label = Label(self, text= " steps of %s %s" % (self.minimization_algorithm, self.additional_information), **modeling_window_explanation_padless)
         self.algorithm_label.pack(side="left")
 
     def check_parameters(self):
