@@ -150,6 +150,7 @@ class PyMod:
         self.data_directory_name = "data"
         self.blast_databases_directory_name = "blast_databases"
         self.blast_databases_directory_shortcut = os.path.join(self.data_directory_name, self.blast_databases_directory_name)
+        self.temp_directory_name = "temp"
 
         # Structures.
         self.structures_directory = "structures"
@@ -1224,6 +1225,9 @@ class PyMod:
     def create_similarity_searches_directory(self):
         self.create_subdirectory(self.similarity_searches_directory)
 
+    def create_temp_directory(self):
+        self.create_subdirectory(self.temp_directory_name)
+
 
     def create_project_subdirectories(self):
         self.create_alignments_directory()
@@ -1231,6 +1235,7 @@ class PyMod:
         self.create_models_directory()
         self.create_structures_directory()
         self.create_psipred_directory()
+        self.create_temp_directory()
         self.create_similarity_searches_directory()
 
 
@@ -1239,7 +1244,7 @@ class PyMod:
         Removes the previously used subdirectories and all their content when users decide to
         overwrite an existing project's directory.
         """
-        dirs_to_remove = (self.structures_directory, self.models_directory, self.alignments_directory, self.psipred_directory, self.similarity_searches_directory, self.images_directory)
+        dirs_to_remove = (self.structures_directory, self.models_directory, self.alignments_directory, self.psipred_directory, self.similarity_searches_directory, self.images_directory, self.temp_directory_name)
         for single_dir in dirs_to_remove:
             dir_to_remove_path = os.path.join(new_dir_name, single_dir)
             if os.path.isdir(dir_to_remove_path):
@@ -2463,7 +2468,7 @@ class PyMod:
             if self.sele_var[sele].get():
                 selected_num+=1
                 filename=sele+".pdb"
-                pdb_file_shortcut = os.path.join(self.structures_directory, filename)
+                pdb_file_shortcut = os.path.join(self.temp_directory_name, filename)
                 cmd.save(pdb_file_shortcut,sele)
                 cmd.delete(sele)
                 self.open_pdb_file(os.path.abspath(pdb_file_shortcut))
@@ -10304,7 +10309,7 @@ class Parsed_pdb_file:
         self.parsed_biopython_structure = None
 
 
-    def copy_to_structures_directory(self):
+    def copy_to_structures_directory(self, overwrite_in_str_dir=True):
         """
         Copies the original PDB file to the structure directory. This is needed to build multiple
         chain models, because the original PDB file retains information about the quaternary
