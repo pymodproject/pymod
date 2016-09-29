@@ -7694,7 +7694,7 @@ class PyMod:
     # Energy minimization using MODELLER.                           #
     #################################################################
 
-    def energy_minimization(self, model_file_path, parameters_dict, env=None, use_hetatm=True, use_water=True):
+    def energy_minimization(self, model_file_path, parameters_dict, env=None, use_hetatm=True, use_water=True, check_structure=True):
         model_file_directory = os.path.dirname(model_file_path)
         model_file_name = os.path.basename(model_file_path)
         opt_code = model_file_name[:-4]+"_optB"
@@ -7811,8 +7811,6 @@ class PyMod:
             env.edat.dynamic_lennard = old_dynamic_lennard
             env.edat.dynamic_coulomb = old_dynamic_coulomb
             env.edat.contact_shell = old_contact_shell
-
-            return opt_code+'.pdb'
         #----------------------------------------------------
 
         #####################################################
@@ -7849,7 +7847,6 @@ class PyMod:
                 print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='coulomb', spline_on_site=False)"
             if parameters_dict["restraints"]["lj"]:
                 print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='lj', spline_on_site=False)"
-            print >> optimize_fh, "mdl.restraints.make(atmsel, restraint_type='stereo', spline_on_site=False)"
             print >> optimize_fh, "mdl.restraints.write(file='%s')" % os.path.join(model_file_directory, opt_code+'.rsr')
             print >> optimize_fh, "mpdf = atmsel.energy()"
             print >> optimize_fh, 'class SteepestDescent(modeller.optimizers.state_optimizer):'
@@ -7912,8 +7909,18 @@ class PyMod:
             os.remove(optimize_script_file_path)
         #####################################################
 
-        return opt_code+'.pdb'
+        # Checks if all the atomic coordinates of the refined structure are valid.
+        if check_structure:
+            optmized_structure_file_name = os.path.join(model_file_directory, opt_code+'.pdb')
+            fh = open(optmized_structure_file_name, "rU")
+            try:
+                parsed_biopython_structure = Bio.PDB.PDBParser(PERMISSIVE=1).get_structure(optmized_structure_file_name, fh)
+                fh.close()
+            except:
+                fh.close()
+                return None
 
+        return opt_code+'.pdb'
 
 
     #################################################################
@@ -9468,18 +9475,26 @@ class PyMod:
         # ---
         # Cycles through all models built by MODELLER to import them into PyMod and PyMOL.
         # ---
+        # Perform additional energy minimization.
+        if self.additional_optimization_level == "Use":
+            list_of_optimized_structures_names = []
+            for model in a.outputs:
+                optimized_structure_name = self.energy_minimization(model_file_path=os.path.join(model_subdir, model['name']),
+                                                         parameters_dict=self.additional_optimization_dict, env=env,
+                                                         use_hetatm = self.exclude_hetatms == "No", use_water=found_water)
+                list_of_optimized_structures_names.append(optimized_structure_name)
+            # Checks if there were some problems in the additional energy minimization process.
+            if not None in list_of_optimized_structures_names:
+                for model, opt_str_name in zip(a.outputs, list_of_optimized_structures_names):
+                    model["name"] = opt_str_name
+            else:
+                title = "Energy Minimization Error"
+                message = "There was an error in the additional energy minimization performed by MODELLER, therefore the final models will not be optimized using the additional energy minimization protocol you selected."
+                self.show_error_message(title, message, refresh=True)
+
         self.models_file_name_dictionary = {}
         model_file_number = 1
         for model in a.outputs:
-
-            # Perform additional energy minimization.
-            if self.additional_optimization_level == "Use":
-                model['name'] = self.energy_minimization(model_file_path=os.path.join(model_subdir, model['name']),
-                                                         parameters_dict=self.additional_optimization_dict,
-                                                         env=env,
-                                                         use_hetatm = self.exclude_hetatms == "No",
-                                                         use_water=found_water)
-
             ###########################################################################
             # Builds Structure objects for each of the model's chains and loads their #
             # structures in PyMOL.                                                    #
