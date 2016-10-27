@@ -37,7 +37,6 @@ import subprocess
 import webbrowser
 import re
 import pickle
-import time
 
 # PyMOL modules.
 import pymol
@@ -160,8 +159,7 @@ class PyMod:
         # Alignments.
         self.alignments_directory = "alignments"
         self.alignments_files_names = "alignment_" # or "alignment_temp"
-        # A list of all alignments performed by the user.
-        self.alignment_list = []
+        # Number of the alignments performed by the user.
         self.alignment_count = 0
         self.new_clusters_counter = 0
 
@@ -717,6 +715,8 @@ class PyMod:
         For development only. A the 'open_sequence_file', 'open_pdb_file' and
         'build_cluster_from_alignment_file' methods to import sequences when PyMod starts.
         """
+        # self.open_sequence_file("/home/giacomo/Dropbox/sequences/modeling/pax/pax6.fasta")
+        # self.open_pdb_file("/home/giacomo/Dropbox/sequences/modeling/pax/3cmy_pax.pdb")
         pass
 
 
@@ -764,18 +764,17 @@ class PyMod:
         self.sequence_menu.add_command(label = "Save All", command = self.save_all_files_from_main_menu)
         self.filemenu.add_separator()
 
-        # Workspace submenu.
-        # self.WorkSpaceMenu = Menu(self.filemenu, tearoff = 0)
-        # self.filemenu.add_cascade(label = "WorkSpace", menu = self.WorkSpaceMenu)
-        # self.WorkSpaceMenu.add_command(label = "New", command = self.workspace_new)
-        # self.WorkSpaceMenu.add_command(label = "Save", command = self.workspace_save)
-        # self.WorkSpaceMenu.add_command(label = "Open ", command = self.workspace_open)
-        # self.filemenu.add_separator()
-
         # Submenu to open alignments.
         self.alignment_files_menu = Menu(self.filemenu, tearoff = 0)
         self.filemenu.add_cascade(label = "Alignment", menu = self.alignment_files_menu)
         self.alignment_files_menu.add_command(label = "Open from File", command = self.open_alignment_from_main_menu)
+        self.filemenu.add_separator()
+
+        # Projects submenu.
+        self.projects_menu = Menu(self.filemenu, tearoff = 0)
+        self.filemenu.add_cascade(label = "Projects", menu = self.projects_menu)
+        self.projects_menu.add_command(label = "Save Project as", command = self.save_new_project_from_main_menu)
+        self.projects_menu.add_command(label = "Open Project", command = self.open_new_project_from_main_menu)
         self.filemenu.add_separator()
 
         self.filemenu.add_command(label = "Exit", command = self.confirm_close)
@@ -1088,8 +1087,78 @@ class PyMod:
 
 
     ###############################################################################################
-    # PROGRAMS PATH AND WORKSPACE MANAGMENT.                                                      #
+    # PROGRAMS PATH AND PROJECTS MANAGMENT.                                                       #
     ###############################################################################################
+
+    #################################################################
+    # Projects managment.                                           #
+    #################################################################
+
+    def begin_new_project_from_main_menu(self):
+        self.work_in_progress()
+
+
+    ##################
+    # Save projects. #
+    ##################
+
+    def save_new_project_from_main_menu(self):
+
+        # save_project_full_path = asksaveasfilename(defaultextension = "", filetypes = [("ZIP","*.zip")], parent=self.main_window)
+        # if save_file_full_path == "":
+        #     return None
+        # save_project_dir_path = os.path.dirname(save_project_full_path)
+        # save_project_file_name = os.path.basename(save_project_full_path)
+        save_project_dir_path = '/home/giacomo/Desktop'
+        save_project_file_name = "pymod_project"
+        save_project_temp_name = "pymod_project_temp_dir"
+        save_project_temp_path = os.path.join(self.current_pymod_directory, save_project_temp_name)
+
+        if 1:
+            # Builds a temporary directory in which to store project files.
+            if os.path.isdir(save_project_temp_path):
+                shutil.rmtree(save_project_temp_path)
+            os.mkdir(save_project_temp_path)
+
+            # Saves a pickle file with the information about the PyMod project.
+            project_pickle_file = open(os.path.join(save_project_temp_path, "%s.pkl" % save_project_file_name), 'wb')
+            pickled_pymod = Pickled_PyMod(self)
+            # Pickle PyMod using protocol 0.
+            pickle.dump(pickled_pymod, project_pickle_file)
+            project_pickle_file.close()
+
+            # Saves a PyMOL session.
+            cmd.save(os.path.join(save_project_temp_path, "%s.pse" % save_project_file_name))
+
+            # Copies a the current project files in the directory.
+            src = self.current_project_directory_full_path
+            dst = os.path.join(save_project_temp_path, os.path.basename(self.current_project_directory_full_path))
+            shutil.copytree(src, dst)
+
+            # Builds a .zip file of the directory.
+            src = save_project_temp_path
+            zpf = os.path.join(save_project_dir_path, "%s.zip" % save_project_file_name)
+            pmos.zip_directory(src, zpf, use_dirname_root=False)
+            shutil.rmtree(save_project_temp_path)
+
+        # except:
+        #     title = "Save Project Error"
+        #     message = "Could not save the project file to path: %s" % (save_project_dir_path)
+        #     self.show_error_message(title, message)
+
+
+    ##################
+    # Load projects. #
+    ##################
+
+    def open_new_project_from_main_menu(self):
+        project_pickle_file = open(self.project_path, 'rb')
+        pickled_pymod = pickle.load(project_pickle_file)
+        pickled_pymod.load_data(self)
+        project_pickle_file.close()
+        self.gridder()
+
+
 
     #################################################################
     # Import modules.                                               #
@@ -2750,10 +2819,10 @@ class PyMod:
         self.alignments_menu.delete(0,500)
 
         # Then rebuilds it with the new alignments.
-        self.alignment_list = self.get_cluster_elements()
+        alignment_list = self.get_cluster_elements()
 
-        if self.alignment_list != []:
-            for element in self.alignment_list:
+        if alignment_list != []:
+            for element in alignment_list:
                 uid = element.unique_index
                 alignment = element.alignment
 
@@ -3607,7 +3676,6 @@ class PyMod:
         built.
         """
         self.models_menu.delete(0,500)
-        # self.alignment_list = self.get_cluster_elements()
 
         if self.modeling_session_list != []:
             for modeling_session in self.modeling_session_list:
@@ -10893,7 +10961,7 @@ class Modeling_cluster:
         """
         c = None
         for t in self.templates_list:
-            if t in pymod.template_complex.clusterseq_elements:
+            if t in pymod.template_complex.get_pymod_elements():
                 c = t
                 break
         return c
@@ -10910,7 +10978,7 @@ class Modeling_cluster:
     def template_complex_chain_has_ligands(self):
         ligands = False
         for t in self.templates_list:
-            if t in pymod.template_complex.clusterseq_elements:
+            if t in pymod.template_complex.get_pymod_elements():
                 ligand_count = len([h for h in t.structure.hetero_residues if h.hetres_type == "ligand"])
                 if ligand_count > 0:
                     ligands = True
@@ -11029,7 +11097,7 @@ class Segment:
 
     def get_template_complex_chain(self):
         self.template_complex_chain = None
-        for template_complex_chain in pymod.template_complex.clusterseq_elements:
+        for template_complex_chain in pymod.template_complex.get_pymod_elements():
             if self.segment_type[0] == template_complex_chain.structure.pdb_chain_id:
                 self.template_complex_chain = template_complex_chain
                 break
@@ -11455,18 +11523,31 @@ class PDB_file:
         self.segment_structure = segment_structure
         # A list of clusterseq elements for each chain of the structure.
         self.clusterseq_elements = clusterseq_elements
-        # Other informations...
 
     def get_chain_by_id(self,chain_id):
         """
         Returns the 'PyMod_element' object corresponding to the chain_id argument.
         """
         chain_element = None
-        for element in self.clusterseq_elements:
+        for element in self.get_pymod_elements():
             if element.structure.pdb_chain_id == chain_id:
                 chain_element = element
                 break
         return chain_element
+
+    def get_pymod_elements(self):
+        return self.clusterseq_elements
+
+    #----------------------------------------------------------
+    # Methods needed when saving and loading a PyMod project. -
+    #----------------------------------------------------------
+
+    def store_information(self):
+        self.pymod_elements_ids = [element.unique_index for element in self.clusterseq_elements]
+        self.clusterseq_elements = None
+
+    def load_information(self):
+        self.clusterseq_elements = [pymod.get_element_by_unique_index(unique_id) for unique_id in self.pymod_elements_ids]
 
 
 class Modeling_session:
@@ -11813,11 +11894,6 @@ class PyMod_element: # ClusterSeq
         self.mousepos = 0
         self.seqpos   = -1
 
-        # Creates an inner-frames to display the sequence.
-        self.sequence_frame = pymod.rightpan.interior()
-        # Creates an inner-frames to display the header.
-        self.header_frame = pymod.leftpan.interior()
-
         # Sets the font type and size.
         self.sequence_font_type = pmgi.fixed_width_font
         self.sequence_font_size = font_size
@@ -11850,7 +11926,7 @@ class PyMod_element: # ClusterSeq
         if grid_position == None:
             grid_position = self.grid_position
 
-        self.sequence_entry = Text(self.sequence_frame,
+        self.sequence_entry = Text(pymod.rightpan.interior(),
             font = self.sequence_font,
             cursor = "hand2",
             wrap=NONE,
@@ -11886,7 +11962,7 @@ class PyMod_element: # ClusterSeq
                 self.sonsign.set("|b")
 
             # Creates a sequence entry inside the right-frame.
-            trattino=Entry(self.sequence_frame, font = self.sequence_font, cursor = "hand2",
+            trattino=Entry(pymod.rightpan.interior(), font = self.sequence_font, cursor = "hand2",
                            textvariable=self.sonsign, bd=0, state = DISABLED,
                            disabledforeground = 'white', disabledbackground = self.bg_color,
                            highlightbackground= self.bg_color, justify = LEFT, width = 2 )
@@ -11912,7 +11988,7 @@ class PyMod_element: # ClusterSeq
         plusminus.set(self.button_state)
 
         # It's not a Button widget, it's an Entry widget (more customizable).
-        button=Entry(self.sequence_frame, font = self.sequence_font,
+        button=Entry(pymod.rightpan.interior(), font = self.sequence_font,
                      cursor = "hand2", textvariable=plusminus,
                      relief="ridge", bd=0,
                      state = DISABLED, disabledforeground = 'white',
@@ -11955,7 +12031,7 @@ class PyMod_element: # ClusterSeq
         self.header_entry_var = StringVar()
         self.header_entry_var.set(self.my_header)
 
-        self.header_entry = Entry(self.header_frame,
+        self.header_entry = Entry(pymod.leftpan.interior(),
             font = self.sequence_font,
             cursor = "hand2",
             textvariable= self.header_entry_var,
@@ -13317,3 +13393,91 @@ class PyMod_element: # ClusterSeq
         elif self.element_type == "structure" or self.element_type == "model":
             self.popup_menu_right.add_command(label="Select Residue in PyMOL", command=self.select_residue_in_pymol)
             self.popup_menu_right.add_command(label="Center Residue in PyMOL", command=self.center_residue_in_pymol)
+
+
+###################################################################################################
+# STORE PROJECTS' INFORMATION IN PICKLE FILES.                                                    #
+###################################################################################################
+
+class Pickled_PyMod:
+    """
+    Class to store the information of a PyMod project in a pickle file.
+    """
+
+    def __init__(self, pymod):
+        self.store_data(pymod)
+
+    def store_data(self, pymod):
+        for pdb_file in pymod.pdb_list: # Remove PyMod elements from these objects, since they store Tkinter objects.
+            pdb_file.store_information()
+        self.transfer_data(source=pymod, target=self)
+        self.pymod_elements_list = [Pickled_PyMod_element(pymod_element) for pymod_element in pymod.pymod_elements_list]
+
+    def load_data(self, pymod):
+        self.transfer_data(source=self, target=pymod)
+        pymod.pymod_elements_list = [pickled_element.get_pymod_element() for pickled_element in self.pymod_elements_list]
+        for pdb_file in pymod.pdb_list: # Assign back PyMod elements to these objects.
+            pdb_file.load_information()
+
+    def transfer_data(self, source, target):
+        target.unique_index = source.unique_index
+        target.pdb_list = source.pdb_list
+        target.alignment_count = source.alignment_count
+        target.new_clusters_counter = source.new_clusters_counter
+        target.logo_image_counter = source.logo_image_counter
+        target.performed_modeling_count = source.performed_modeling_count
+        target.multiple_chain_models_count = source.multiple_chain_models_count
+        target.modeling_session_list = source.modeling_session_list
+        target.blast_cluster_counter = source.blast_cluster_counter
+        target.current_project_name = source.current_project_name
+        target.current_project_directory_full_path = source.current_project_directory_full_path
+        target.color_index = source.color_index
+
+
+class Pickled_PyMod_element:
+    """
+    Class to store information of a PyMod element in a pickle file.
+    """
+    def __init__(self, pymod_element):
+        self.transfer_data(source=pymod_element, target=self)
+
+    def transfer_data(self, source, target):
+        target.unique_index = source.unique_index
+        target.mother_index = source.mother_index
+        target.child_index = source.child_index
+        target.is_mother = source.is_mother
+        target.is_child = source.is_child
+        target.grid_position = source.grid_position
+        target.my_header_fix = source.my_header_fix
+        target.my_header = source.my_header
+        target.my_sequence = source.my_sequence
+        target.compact_header = source.compact_header
+        target.full_original_header = source.full_original_header
+        target.pir_alignment_string = source.pir_alignment_string
+        target.annotations = source.annotations
+        target.selected = source.selected
+        target.is_shown = source.is_shown
+        target.show_children = source.show_children
+        target.button_state = source.button_state
+        target.mother_button_color = source.mother_button_color
+        target.color_by = source.color_by
+        target.my_color = source.my_color
+        target.pymol_dss_list = source.pymol_dss_list
+        target.psipred_elements_list = source.psipred_elements_list
+        target.campo_scores = source.campo_scores
+        target.dope_scores = source.dope_scores
+        target.dope_items = source.dope_items
+        target.element_type = source.element_type
+        target.is_blast_query = source.is_blast_query
+        target.is_lead = source.is_lead
+        target.is_bridge = source.is_bridge
+        target.structure = source.structure
+        target.alignment = source.alignment
+        target.is_model = source.is_model
+        target.models_count = source.models_count
+        target.polymer_type = source.polymer_type
+
+    def get_pymod_element(self):
+        pymod_element = PyMod_element("","")
+        self.transfer_data(source=self, target=pymod_element)
+        return pymod_element
