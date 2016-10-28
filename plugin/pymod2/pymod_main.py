@@ -36,6 +36,7 @@ import shutil
 import subprocess
 import webbrowser
 import re
+import zipfile
 import pickle
 
 # PyMOL modules.
@@ -106,6 +107,7 @@ except:
 def pymod_launcher(app, pymod_plugin_name, pymod_version, pymod_revision):
     global pymod
     pymod = PyMod(app, pymod_plugin_name, pymod_version, pymod_revision)
+    pymod.start_project()
 
 
 ###################################################################################################
@@ -145,6 +147,7 @@ class PyMod:
         self.pymod_directory_name = "pymod" # "pymod"
         self.pymod_temp_directory_name = "pymod_temp_directory"
         self.projects_directory_name = "projects"
+        self.default_project_name = "new_pymod_project"
         self.external_tools_directory_name = "external_tools"
         self.data_directory_name = "data"
         self.blast_databases_directory_name = "blast_databases"
@@ -291,10 +294,11 @@ class PyMod:
         # Builds the menu of the main window.
         self.make_main_menu()
 
-        # -----
-        # Starts up a new job.
-        # -----
 
+    def start_project(self):
+        """
+        Starts up a new job.
+        """
         # Cheks for PyMod configuration file.
         self.configuration_file_error = False
 
@@ -310,21 +314,19 @@ class PyMod:
                 # Check if there is 'pymod_temp_directory' left by the PyMod installer script.
                 if not self.check_installer_script_temp_directory():
                     # Get values options for each PyMod tool and start a new PyMod job.
-                    self.get_parameters_from_configuration_file()
-                    self.check_pymod_directory()
-                    self.show_new_job_window()
-                # If there is 'pymod_temp_directory'.
+                    self.initialize_session()
+                # If there is a 'pymod_temp_directory' (the installer script has been used before
+                # this last PyMod session).
                 else:
                     # The installer script was run before configuring PyMod for the first time (it
                     # left an empty configuratio file).
                     if self.check_empty_configuration_file():
                         self.show_first_time_usage_message()
                         self.show_pymod_directory_selection_window()
-                    # The installer script was run after the first PyMod session.
+                    # The installer script was run after the first PyMod session (in order to
+                    # install some missing tools).
                     else:
-                        self.get_parameters_from_configuration_file()
-                        self.check_pymod_directory()
-                        self.show_new_job_window()
+                        self.initialize_session()
 
             except Exception, e:
                 self.show_configuration_file_error(e, "read")
@@ -539,10 +541,8 @@ class PyMod:
         # Begin a new PyMod job.
         self.pymod_dir_window.destroy()
         self.get_parameters_from_configuration_file()
-        title = "PyMod first run"
-        message = "You are about to begin your first PyMod session. Please insert the name of your first PyMod project."
-        # tkMessageBox.showinfo(title, message, parent=self.main_window)
-        self.show_new_job_window()
+        # tkMessageBox.showinfo("PyMod first run", "You are about to begin your first PyMod session.", parent=self.main_window)
+        self.new_job_state()
 
 
     def show_configuration_file_error(self, error, mode):
@@ -619,28 +619,35 @@ class PyMod:
         self.pmw_dialog_val = None
 
 
+    def initialize_session(self):
+        self.get_parameters_from_configuration_file()
+        self.check_pymod_directory()
+        self.new_job_state()
+
+
     def show_new_job_window(self):
         """
         Builds a window that let users choose the name of the new projects direcotory at the
         beginning of a PyMod session.
         """
-        self.in_a_job = True
-        self.new_dir_window = pmgi.PyMod_base_window(self.main_window, "New PyMod Project")
-        self.new_dir_window.geometry('-100+75')
-        self.new_dir_window.resizable(0,0)
-        self.new_dir_window.config()
-        self.new_dir_window.protocol("WM_DELETE_WINDOW", lambda: self.confirm_close(parent=self.new_dir_window))
-
-        self.new_dir_window_label=Label(self.new_dir_window.main_frame, text= "Enter the name of your new PyMod project", **pmgi.label_style_0) # Create a new directory inside your PyMod projects folder
-        self.new_dir_window_label.pack(fill="x", pady=10, padx=10)
-
-        self.new_dir_window_main_entry=Entry(self.new_dir_window.main_frame, bg='white', width=18)
-        self.new_dir_window_main_entry.insert(0, "new_pymod_project")
-        self.new_dir_window_main_entry.pack()
-
-        self.new_dir_window_main_submit=Button(self.new_dir_window.main_frame, text="SUBMIT",
-            command=self.new_job_state, **pmgi.button_style_1)
-        self.new_dir_window_main_submit.pack(pady=10)
+        pass
+        # self.in_a_job = True
+        # self.new_dir_window = pmgi.PyMod_base_window(self.main_window, "New PyMod Project")
+        # self.new_dir_window.geometry('-100+75')
+        # self.new_dir_window.resizable(0,0)
+        # self.new_dir_window.config()
+        # self.new_dir_window.protocol("WM_DELETE_WINDOW", lambda: self.confirm_close(parent=self.new_dir_window))
+        #
+        # self.new_dir_window_label=Label(self.new_dir_window.main_frame, text= "Enter the name of your new PyMod project", **pmgi.label_style_0) # Create a new directory inside your PyMod projects folder
+        # self.new_dir_window_label.pack(fill="x", pady=10, padx=10)
+        #
+        # self.new_dir_window_main_entry=Entry(self.new_dir_window.main_frame, bg='white', width=18)
+        # self.new_dir_window_main_entry.insert(0, "new_pymod_project")
+        # self.new_dir_window_main_entry.pack()
+        #
+        # self.new_dir_window_main_submit=Button(self.new_dir_window.main_frame, text="SUBMIT",
+        #     command=self.new_job_state, **pmgi.button_style_1)
+        # self.new_dir_window_main_submit.pack(pady=10)
 
 
     def new_job_state(self):
@@ -648,66 +655,48 @@ class PyMod:
         This is called when the SUBMIT button on the "New Job" window is pressed.
         """
 
-        # Checks if the name is valid.
-        def special_match(strg, search=re.compile(r'[^A-z0-9-_]').search):
-            if strg=="":
-                return False
-            else:
-                return not bool(search(strg))
-        if not special_match(self.new_dir_window_main_entry.get()) == True:
-            title = 'Name Error'
-            message = 'Only a-z, 0-9, "-" and "_" are allowed in the project name.'
-            self.show_error_message(title, message, parent_window=self.new_dir_window)
-            return False
-
-        # Writes the directory.
-        new_dir_name = self.new_dir_window_main_entry.get()
+        new_project_dir_name = self.default_project_name
         try:
-            pymod_projects_dir_path = os.path.join(self.pymod_plugin["pymod_dir_path"].get_value(), self.projects_directory_name)
-            new_project_dir_path = os.path.join(pymod_projects_dir_path, new_dir_name)
+            #------------------------------------
+            # Writes the new project directory. -
+            #------------------------------------
+            pymod_dir_path = self.pymod_plugin["pymod_dir_path"].get_value()
+            pymod_projects_dir_path = os.path.join(pymod_dir_path, self.projects_directory_name)
+            new_project_dir_path = os.path.join(pymod_projects_dir_path, new_project_dir_name)
             # If the projects directory is not present, built it.
-            if not os.path.isdir(pymod_projects_dir_path):
-                # Remove any file named in the same way.
-                if os.path.isfile(pymod_projects_dir_path):
-                    os.remove(pymod_projects_dir_path)
-                os.mkdir(pymod_projects_dir_path)
+            pmos.pymod_mkdir(pymod_projects_dir_path)
             # If a directory with the same name of the new project directory exists, delete it.
             if os.path.isdir(new_project_dir_path):
-                title = 'Name Error'
-                message = "A directory with the name '%s' already exists in PyMod projects folder.\nDo you want to overwrite it?" % new_dir_name
-                overwrite = tkMessageBox.askyesno(title, message, parent=self.new_dir_window)
-                if overwrite:
-                    if os.path.isdir(new_project_dir_path):
-                        # Remove all the files in the previously used directory.
-                        for the_file in os.listdir(new_project_dir_path):
-                            file_path = os.path.join(new_project_dir_path, the_file)
-                            if os.path.isfile(file_path):
-                                os.unlink(file_path)
-                        self.remove_project_subdirectories(new_project_dir_path)
-                        self.initialize_session(new_dir_name)
-                    elif os.path.isfile(new_project_dir_path):
-                        os.remove(new_project_dir_path)
+                self.clean_project_directory(new_project_dir_path)
             else:
-                os.mkdir(new_project_dir_path)
-                self.initialize_session(new_dir_name)
+                pmos.pymod_mkdir(new_project_dir_path)
+
+            #--------------------------------------------------------------------------------
+            # Initializes a session and shows the main window, which was previously hidden. -
+            #--------------------------------------------------------------------------------
+            self.current_pymod_directory = pymod_dir_path
+            self.current_project_name = new_project_dir_name
+            self.current_project_directory_full_path = os.path.join(self.current_pymod_directory, self.projects_directory_name, self.current_project_name)
+            os.chdir(self.current_project_directory_full_path)
+            self.create_project_subdirectories()
+            self.main_window.deiconify()
+            self.launch_default()
+
         except Exception, e:
-            message = "Unable to write directory '%s' because of the following error: %s." % (new_dir_name, e)
+            message = "Unable to write directory '%s' because of the following error: %s." % (new_project_dir_name, e)
             self.show_error_message("Initialization error", message)
             return False
 
 
-    def initialize_session(self, new_project_directory):
+    def clean_project_directory(self, new_project_dir_path):
         """
-        Initializes a session and shows the main window, which was previously hidden.
+        Remove all the files in the previously used directory.
         """
-        self.new_dir_window.destroy()
-        self.current_pymod_directory = self.pymod_plugin["pymod_dir_path"].get_value()
-        self.current_project_name = new_project_directory
-        self.current_project_directory_full_path = os.path.join(self.pymod_plugin["pymod_dir_path"].get_value(), self.projects_directory_name, new_project_directory)
-        os.chdir(self.current_project_directory_full_path)
-        self.create_project_subdirectories()
-        self.main_window.deiconify()
-        self.launch_default()
+        for the_file in os.listdir(new_project_dir_path):
+            file_path = os.path.join(new_project_dir_path, the_file)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        self.remove_project_subdirectories(new_project_dir_path)
 
 
     def launch_default(self):
@@ -1091,76 +1080,6 @@ class PyMod:
     ###############################################################################################
 
     #################################################################
-    # Projects managment.                                           #
-    #################################################################
-
-    def begin_new_project_from_main_menu(self):
-        self.work_in_progress()
-
-
-    ##################
-    # Save projects. #
-    ##################
-
-    def save_new_project_from_main_menu(self):
-
-        # save_project_full_path = asksaveasfilename(defaultextension = "", filetypes = [("ZIP","*.zip")], parent=self.main_window)
-        # if save_file_full_path == "":
-        #     return None
-        # save_project_dir_path = os.path.dirname(save_project_full_path)
-        # save_project_file_name = os.path.basename(save_project_full_path)
-        save_project_dir_path = '/home/giacomo/Desktop'
-        save_project_file_name = "pymod_project"
-        save_project_temp_name = "pymod_project_temp_dir"
-        save_project_temp_path = os.path.join(self.current_pymod_directory, save_project_temp_name)
-
-        if 1:
-            # Builds a temporary directory in which to store project files.
-            if os.path.isdir(save_project_temp_path):
-                shutil.rmtree(save_project_temp_path)
-            os.mkdir(save_project_temp_path)
-
-            # Saves a pickle file with the information about the PyMod project.
-            project_pickle_file = open(os.path.join(save_project_temp_path, "%s.pkl" % save_project_file_name), 'wb')
-            pickled_pymod = Pickled_PyMod(self)
-            # Pickle PyMod using protocol 0.
-            pickle.dump(pickled_pymod, project_pickle_file)
-            project_pickle_file.close()
-
-            # Saves a PyMOL session.
-            cmd.save(os.path.join(save_project_temp_path, "%s.pse" % save_project_file_name))
-
-            # Copies a the current project files in the directory.
-            src = self.current_project_directory_full_path
-            dst = os.path.join(save_project_temp_path, os.path.basename(self.current_project_directory_full_path))
-            shutil.copytree(src, dst)
-
-            # Builds a .zip file of the directory.
-            src = save_project_temp_path
-            zpf = os.path.join(save_project_dir_path, "%s.zip" % save_project_file_name)
-            pmos.zip_directory(src, zpf, use_dirname_root=False)
-            shutil.rmtree(save_project_temp_path)
-
-        # except:
-        #     title = "Save Project Error"
-        #     message = "Could not save the project file to path: %s" % (save_project_dir_path)
-        #     self.show_error_message(title, message)
-
-
-    ##################
-    # Load projects. #
-    ##################
-
-    def open_new_project_from_main_menu(self):
-        project_pickle_file = open(self.project_path, 'rb')
-        pickled_pymod = pickle.load(project_pickle_file)
-        pickled_pymod.load_data(self)
-        project_pickle_file.close()
-        self.gridder()
-
-
-
-    #################################################################
     # Import modules.                                               #
     #################################################################
 
@@ -1321,16 +1240,130 @@ class PyMod:
 
 
     #################################################################
-    # Workspaces.                                                   #
+    # Projects managment.                                           #
     #################################################################
-    def workspace_save(self):
-        pass
 
-    def workspace_open(self):
-        pass
+    def begin_new_project_from_main_menu(self):
+        self.work_in_progress()
 
-    def workspace_new(self):
-        pass
+
+    ##################
+    # Save projects. #
+    ##################
+
+    def save_new_project_from_main_menu(self):
+        save_project_full_path = asksaveasfilename(defaultextension="", filetypes=pmdt.pymod_session_extension, parent=self.main_window)
+        if save_project_full_path == "":
+            return None
+        self.save_pymod_project(save_project_full_path)
+
+    def save_pymod_project(self, save_project_full_path):
+        try:
+            # Define the file path.
+            save_project_dir_path = os.path.dirname(save_project_full_path)
+            save_project_zipfile_name = os.path.splitext(os.path.basename(save_project_full_path))[0]
+            save_project_file_name = self.default_project_name
+            # Temporary directory which will become zipped.
+            save_project_temp_name = "pymod_project_temp_dir"
+            save_project_temp_path = os.path.join(self.current_pymod_directory, save_project_temp_name)
+
+            # Builds a temporary directory in which to store project files.
+            pmos.pymod_mkdir(save_project_temp_path, overwrite_dirs=True)
+
+            # Saves a pickle file with the information about the PyMod project. This will remove
+            # Tkinter objects stored in the 'PyMod' object, because they can't be pickled.
+            project_pickle_file = open(os.path.join(save_project_temp_path, "%s.pkl" % save_project_file_name), 'wb')
+            pickled_pymod = Pickled_PyMod()
+            pickled_pymod.pickle(self)
+            pickle.dump(pickled_pymod, project_pickle_file)
+            pickled_pymod.unpickle(self)
+            project_pickle_file.close()
+
+            # Saves a PyMOL session.
+            cmd.save(os.path.join(save_project_temp_path, "%s.pse" % save_project_file_name))
+
+            # Copies the current project files in the directory.
+            src = self.current_project_directory_full_path
+            dst = os.path.join(save_project_temp_path, os.path.basename(self.current_project_directory_full_path))
+            shutil.copytree(src, dst)
+
+            # Builds a .zip file of the directory.
+            src = save_project_temp_path
+            zpf = os.path.join(save_project_dir_path, "%s.pmse" % save_project_zipfile_name)
+            pmos.zip_directory(src, zpf, use_dirname_root=False)
+            shutil.rmtree(save_project_temp_path)
+
+        except:
+            # Removes temporary files.
+            if os.path.isdir(save_project_temp_path):
+                shutil.rmtree(save_project_temp_path)
+            title = "Save Project Error"
+            message = "Could not save the project file to path: %s" % (save_project_dir_path)
+            self.show_error_message(title, message)
+
+
+    ##################
+    # Load projects. #
+    ##################
+
+    def open_new_project_from_main_menu(self):
+        project_archive_file_path = askopenfilename(filetypes=pmdt.pymod_session_extension, multiple=False, parent=self.main_window)
+        if project_archive_file_path == "":
+            return None
+        if not os.path.isfile(project_archive_file_path):
+            return None
+        self.open_pymod_project(project_archive_file_path)
+
+    def open_pymod_project(self, project_archive_file_path):
+        try:
+            # Builds a temporary directory in which to store project files.
+            save_project_file_name = self.default_project_name
+            save_project_temp_name = "pymod_project_temp_dir"
+            save_project_temp_path = os.path.join(self.current_pymod_directory, save_project_temp_name)
+            pmos.pymod_mkdir(save_project_temp_path, overwrite_dirs=True)
+
+            # Check if the file is a valid zip file.
+            if not zipfile.is_zipfile(project_archive_file_path):
+                raise Exception("The file is not a zip file.")
+            zfh = open(project_archive_file_path, 'rb')
+            zipfile_obj = zipfile.ZipFile(zfh)
+            # Check if the file is a valid PyMod session file.
+            files_to_check = ["%s.pkl" % save_project_file_name, "%s.pse" % save_project_file_name]
+            if not set(files_to_check) < set(zipfile_obj.namelist()):
+                zfh.close()
+                raise Exception("The file is not a valid PyMod session file.")
+            # Extract the file to a temporary directory.
+            pmos.zipfile_extract_all(zipfile_obj, save_project_temp_path)
+
+            # Unpickle the data"
+            project_pickle_file = open(os.path.join(save_project_temp_path, "%s.pkl" % save_project_file_name), 'rb')
+            pickled_pymod = pickle.load(project_pickle_file)
+            pickled_pymod.load_data(self)
+            project_pickle_file.close()
+
+            # Saves a PyMOL session.
+            cmd.reinitialize()
+            cmd.load(os.path.join(save_project_temp_path, "%s.pse" % save_project_file_name))
+            # Copies the current project files in the directory.
+            shutil.rmtree(self.current_project_directory_full_path)
+            src = os.path.join(save_project_temp_path, os.path.basename(self.current_project_directory_full_path))
+            dst = self.current_project_directory_full_path
+            shutil.copytree(src, dst)
+            os.chdir(self.current_project_directory_full_path)
+
+            # Builds a .zip file of the directory.
+            shutil.rmtree(save_project_temp_path)
+
+            # Updates PyMod.
+            self.gridder()
+
+        except Exception, e:
+            # Removes temporary files.
+            if os.path.isdir(save_project_temp_path):
+                shutil.rmtree(save_project_temp_path)
+            title = "Open Project Error"
+            message = "Could not open the project file '%s': because of the following error: %s" % (project_archive_file_path, e)
+            self.show_error_message(title, message)
 
 
     ###############################################################################################
@@ -13404,22 +13437,48 @@ class Pickled_PyMod:
     Class to store the information of a PyMod project in a pickle file.
     """
 
-    def __init__(self, pymod):
-        self.store_data(pymod)
+    def __init__(self):
+        pass
 
-    def store_data(self, pymod):
-        for pdb_file in pymod.pdb_list: # Remove PyMod elements from these objects, since they store Tkinter objects.
-            pdb_file.store_information()
-        self.transfer_data(source=pymod, target=self)
+    def pickle(self, pymod):
+        """
+        Used when saving a PyMod session.
+        """
+        self._store_pdb_information(pymod)
+        self._transfer_data(source=pymod, target=self)
         self.pymod_elements_list = [Pickled_PyMod_element(pymod_element) for pymod_element in pymod.pymod_elements_list]
 
+    def unpickle(self, pymod):
+        """
+        Used after having saved a PyMod session with the 'pickle()' method. This will restore some
+        information which was lost while using 'pickle()'.
+        """
+        self._load_pdb_information(pymod)
+
     def load_data(self, pymod):
-        self.transfer_data(source=self, target=pymod)
+        """
+        Used to load a session.
+        """
+        self._transfer_data(source=self, target=pymod)
         pymod.pymod_elements_list = [pickled_element.get_pymod_element() for pickled_element in self.pymod_elements_list]
-        for pdb_file in pymod.pdb_list: # Assign back PyMod elements to these objects.
+        self._load_pdb_information(pymod)
+
+
+    def _store_pdb_information(self, pymod):
+        """
+        Remove PyMod elements from 'PDB_file' objects, since they store Tkinter objects.
+        """
+        for pdb_file in pymod.pdb_list:
+            pdb_file.store_information()
+
+    def _load_pdb_information(self, pymod):
+        """
+        Assign back PyMod elements to 'PDB_file' objects.
+        """
+        for pdb_file in pymod.pdb_list:
             pdb_file.load_information()
 
-    def transfer_data(self, source, target):
+    def _transfer_data(self, source, target):
         target.unique_index = source.unique_index
         target.pdb_list = source.pdb_list
         target.alignment_count = source.alignment_count

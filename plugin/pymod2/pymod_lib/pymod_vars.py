@@ -26,6 +26,8 @@ alignment_programs_full_names_dictionary = {
 
 psipred_output_extensions = (".ss2",".horiz")
 
+# PyMod session file extension.
+pymod_session_extension = [("PMSE","*.pmse")]
 
 # Sequence file types.
 supported_sequence_file_types = {"fasta":"FASTA", "genbank": "GenPept"}

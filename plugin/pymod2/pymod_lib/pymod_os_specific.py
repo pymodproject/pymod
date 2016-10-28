@@ -101,6 +101,24 @@ def pymod_rm(file_path):
     elif os.path.isdir(file_path):
         shutil.rmtree(file_path)
 
+def pymod_mkdir(dir_path, overwrite_dirs=False, overwrite_files=True):
+    """
+    If the directory already exists, do not throw an error.
+    """
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+    elif os.path.isdir(dir_path):
+        if overwrite_dirs:
+            shutil.rmtree(dir_path)
+            os.mkdir(dir_path)
+    # Remove any file named in the same way.
+    elif os.path.isfile(dir_path):
+        if overwrite_files:
+            os.remove(dir_path)
+            os.mkdir(dir_path)
+        else:
+            raise Exception("Could not make a directory at: %s." % dir_path)
+
 
 def get_target_path_owner(path):
     stat_info = os.stat(path)
@@ -360,10 +378,11 @@ def check_pymol_builtin_cealign():
 
 def zipfile_extract_all(zipfile_obj, target_dir):
     pyversion = sys.version[:3].replace('.','')
-    for name in zipfile_obj.namelist():
-        if int(pyversion) > 26:
+    if int(pyversion) > 26:
+        for name in zipfile_obj.namelist():
             zipfile_obj.extract(name, target_dir)
-        else:
+    else:
+        for name in zipfile_obj.namelist():
             custom_extract(zipfile_obj, name, target_dir)
 
 
@@ -452,6 +471,21 @@ def get_exe_file_name(program_name, force_not_extended=False):
     if sys.platform == "win32" and not force_not_extended:
         program_name += ".exe"
     return program_name
+
+
+def special_match(strg, search=re.compile(r'[^A-z0-9-_]').search):
+    """
+    Checks if a input string is valid.
+    """
+    if strg=="":
+        return False
+    else:
+        return not bool(search(strg))
+
+def file_name_special_match(strg):
+    return special_match(strg)
+    # title = 'Name Error'
+    # message = 'Only a-z, 0-9, "-" and "_" are allowed in the project name.'
 
 
 def get_askopenfilename_tuple(askopenfilename_result):
