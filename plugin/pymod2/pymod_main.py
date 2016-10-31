@@ -107,7 +107,7 @@ except:
 def pymod_launcher(app, pymod_plugin_name, pymod_version, pymod_revision):
     global pymod
     pymod = PyMod(app, pymod_plugin_name, pymod_version, pymod_revision)
-    pymod.start_project()
+    pymod.start_new_project()
 
 
 ###################################################################################################
@@ -295,10 +295,11 @@ class PyMod:
         self.make_main_menu()
 
 
-    def start_project(self):
+    def start_new_project(self):
         """
         Starts up a new job.
         """
+        self.initialize_project_data()
         # Cheks for PyMod configuration file.
         self.configuration_file_error = False
 
@@ -338,6 +339,22 @@ class PyMod:
                     self.show_pymod_directory_selection_window()
                 else:
                     self.main_window.destroy()
+
+
+    def initialize_project_data(self):
+        self.unique_index = 0
+        self.pdb_list = []
+        self.alignment_count = 0
+        self.new_clusters_counter = 0
+        self.logo_image_counter = 0
+        self.performed_modeling_count = 0
+        self.multiple_chain_models_count = 0
+        self.modeling_session_list = []
+        self.blast_cluster_counter = 0
+        self.current_project_name = None
+        self.current_project_directory_full_path = None
+        self.color_index = 0
+        self.pymod_elements_list = []
 
 
     def show_first_time_usage_message(self):
@@ -704,9 +721,9 @@ class PyMod:
         For development only. A the 'open_sequence_file', 'open_pdb_file' and
         'build_cluster_from_alignment_file' methods to import sequences when PyMod starts.
         """
-        # self.open_sequence_file("/home/giacomo/Dropbox/sequences/modeling/pax/pax6.fasta")
-        # self.open_pdb_file("/home/giacomo/Dropbox/sequences/modeling/pax/3cmy_pax.pdb")
-        pass
+        self.open_sequence_file("/home/giacomo/Dropbox/sequences/modeling/pax/pax6.fasta")
+        self.open_pdb_file("/home/giacomo/Dropbox/sequences/modeling/pax/3cmy_pax.pdb")
+        # pass
 
 
     def create_main_window_panes(self):
@@ -762,6 +779,7 @@ class PyMod:
         # Projects submenu.
         self.projects_menu = Menu(self.filemenu, tearoff = 0)
         self.filemenu.add_cascade(label = "Projects", menu = self.projects_menu)
+        self.projects_menu.add_command(label = "New Project", command = self.begin_new_project_from_main_menu)
         self.projects_menu.add_command(label = "Save Project as", command = self.save_new_project_from_main_menu)
         self.projects_menu.add_command(label = "Open Project", command = self.open_new_project_from_main_menu)
         self.filemenu.add_separator()
@@ -1244,7 +1262,10 @@ class PyMod:
     #################################################################
 
     def begin_new_project_from_main_menu(self):
-        self.work_in_progress()
+        answer = tkMessageBox.askyesno(message="Are you really sure you want to begin a new PyMod project? If you do not save your current project, its data will be permanently lost.", title="Begin New Project?", parent=self.main_window)
+        if not answer:
+            return None
+        self.start_new_project()
 
 
     ##################
@@ -1257,22 +1278,29 @@ class PyMod:
             return None
         self.save_pymod_project(save_project_full_path)
 
-    def save_pymod_project(self, save_project_full_path):
-        try:
-            # Define the file path.
-            save_project_dir_path = os.path.dirname(save_project_full_path)
-            save_project_zipfile_name = os.path.splitext(os.path.basename(save_project_full_path))[0]
-            save_project_file_name = self.default_project_name
-            # Temporary directory which will become zipped.
-            save_project_temp_name = "pymod_project_temp_dir"
-            save_project_temp_path = os.path.join(self.current_pymod_directory, save_project_temp_name)
 
+    def save_pymod_project(self, project_arc_full_path):
+        try:
+            # Temporary directory which will become zipped.
+            project_temp_dir_name = "pymod_project_temp_dir"
+            project_temp_dir_path = os.path.join(self.current_pymod_directory, project_temp_dir_name)
+            # Define the file path of the PyMod project archive file.
+            project_arc_dir_path = os.path.dirname(project_arc_full_path)
+            project_arc_name = "%s.pmse" % os.path.splitext(os.path.basename(project_arc_full_path))[0]
+            project_name = self.default_project_name
+        except:
+            title = "Save Project Error"
+            message = "Could not save the project."
+            self.show_error_message(title, message)
+            return None
+
+        try:
             # Builds a temporary directory in which to store project files.
-            pmos.pymod_mkdir(save_project_temp_path, overwrite_dirs=True)
+            pmos.pymod_mkdir(project_temp_dir_path, overwrite_dirs=True)
 
             # Saves a pickle file with the information about the PyMod project. This will remove
             # Tkinter objects stored in the 'PyMod' object, because they can't be pickled.
-            project_pickle_file = open(os.path.join(save_project_temp_path, "%s.pkl" % save_project_file_name), 'wb')
+            project_pickle_file = open(os.path.join(project_temp_dir_path, "%s.pkl" % project_name), 'wb')
             pickled_pymod = Pickled_PyMod()
             pickled_pymod.pickle(self)
             pickle.dump(pickled_pymod, project_pickle_file)
@@ -1280,25 +1308,24 @@ class PyMod:
             project_pickle_file.close()
 
             # Saves a PyMOL session.
-            cmd.save(os.path.join(save_project_temp_path, "%s.pse" % save_project_file_name))
+            cmd.save(os.path.join(project_temp_dir_path, "%s.pse" % project_name))
 
             # Copies the current project files in the directory.
             src = self.current_project_directory_full_path
-            dst = os.path.join(save_project_temp_path, os.path.basename(self.current_project_directory_full_path))
+            dst = os.path.join(project_temp_dir_path, os.path.basename(self.current_project_directory_full_path))
             shutil.copytree(src, dst)
 
             # Builds a .zip file of the directory.
-            src = save_project_temp_path
-            zpf = os.path.join(save_project_dir_path, "%s.pmse" % save_project_zipfile_name)
+            src = project_temp_dir_path
+            zpf = os.path.join(project_arc_dir_path, project_arc_name)
             pmos.zip_directory(src, zpf, use_dirname_root=False)
-            shutil.rmtree(save_project_temp_path)
+            shutil.rmtree(project_temp_dir_path)
 
         except:
-            # Removes temporary files.
-            if os.path.isdir(save_project_temp_path):
-                shutil.rmtree(save_project_temp_path)
+            if os.path.isdir(project_temp_dir_path):
+                shutil.rmtree(project_temp_dir_path)
             title = "Save Project Error"
-            message = "Could not save the project file to path: %s" % (save_project_dir_path)
+            message = "Could not save the project file to path: %s" % (os.path.join(project_arc_dir_path, project_arc_name))
             self.show_error_message(title, message)
 
 
@@ -1314,13 +1341,15 @@ class PyMod:
             return None
         self.open_pymod_project(project_archive_file_path)
 
+
     def open_pymod_project(self, project_archive_file_path):
+        # If some errors happen here, continue the PyMod session.
         try:
             # Builds a temporary directory in which to store project files.
-            save_project_file_name = self.default_project_name
-            save_project_temp_name = "pymod_project_temp_dir"
-            save_project_temp_path = os.path.join(self.current_pymod_directory, save_project_temp_name)
-            pmos.pymod_mkdir(save_project_temp_path, overwrite_dirs=True)
+            project_name = self.default_project_name
+            project_temp_dir_name = "pymod_project_temp_dir"
+            project_temp_dir_path = os.path.join(self.current_pymod_directory, project_temp_dir_name)
+            pmos.pymod_mkdir(project_temp_dir_path, overwrite_dirs=True)
 
             # Check if the file is a valid zip file.
             if not zipfile.is_zipfile(project_archive_file_path):
@@ -1328,42 +1357,57 @@ class PyMod:
             zfh = open(project_archive_file_path, 'rb')
             zipfile_obj = zipfile.ZipFile(zfh)
             # Check if the file is a valid PyMod session file.
-            files_to_check = ["%s.pkl" % save_project_file_name, "%s.pse" % save_project_file_name]
+            files_to_check = ["%s.pkl" % project_name, "%s.pse" % project_name]
             if not set(files_to_check) < set(zipfile_obj.namelist()):
                 zfh.close()
                 raise Exception("The file is not a valid PyMod session file.")
             # Extract the file to a temporary directory.
-            pmos.zipfile_extract_all(zipfile_obj, save_project_temp_path)
+            pmos.zipfile_extract_all(zipfile_obj, project_temp_dir_path)
+            zfh.close()
 
-            # Unpickle the data"
-            project_pickle_file = open(os.path.join(save_project_temp_path, "%s.pkl" % save_project_file_name), 'rb')
+        except Exception, e:
+            self.load_project_failure(project_archive_file_path, e, project_temp_dir_path, continue_session=True)
+            return None
+
+        # If some errors happens here, close PyMod.
+        try:
+            # Unpickle the data.
+            project_pickle_file = open(os.path.join(project_temp_dir_path, "%s.pkl" % project_name), 'rb')
             pickled_pymod = pickle.load(project_pickle_file)
             pickled_pymod.load_data(self)
             project_pickle_file.close()
 
-            # Saves a PyMOL session.
+            # Loads a PyMOL session.
             cmd.reinitialize()
-            cmd.load(os.path.join(save_project_temp_path, "%s.pse" % save_project_file_name))
+            cmd.load(os.path.join(project_temp_dir_path, "%s.pse" % project_name))
+
             # Copies the current project files in the directory.
             shutil.rmtree(self.current_project_directory_full_path)
-            src = os.path.join(save_project_temp_path, os.path.basename(self.current_project_directory_full_path))
+            src = os.path.join(project_temp_dir_path, os.path.basename(self.current_project_directory_full_path))
             dst = self.current_project_directory_full_path
             shutil.copytree(src, dst)
             os.chdir(self.current_project_directory_full_path)
 
             # Builds a .zip file of the directory.
-            shutil.rmtree(save_project_temp_path)
+            shutil.rmtree(project_temp_dir_path)
 
             # Updates PyMod.
             self.gridder()
 
         except Exception, e:
-            # Removes temporary files.
-            if os.path.isdir(save_project_temp_path):
-                shutil.rmtree(save_project_temp_path)
-            title = "Open Project Error"
-            message = "Could not open the project file '%s': because of the following error: %s" % (project_archive_file_path, e)
-            self.show_error_message(title, message)
+            self.load_project_failure(project_archive_file_path, e, project_temp_dir_path, continue_session=False)
+
+
+    def load_project_failure(self, project_archive_file_path, error, project_temp_dir_path, continue_session=True):
+        if os.path.isdir(project_temp_dir_path):
+            shutil.rmtree(project_temp_dir_path)
+        title = "Open Project Error"
+        message = "Could not open the project file '%s': because of the following error: %s." % (project_archive_file_path, error)
+        if not continue_session:
+            message += " PyMod is now shutting down."
+        self.show_error_message(title, message)
+        if not continue_session:
+            self.main_window.destroy()
 
 
     ###############################################################################################
