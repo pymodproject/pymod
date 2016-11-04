@@ -698,6 +698,7 @@ class PyMod:
             self.create_project_subdirectories()
             self.main_window.deiconify()
             self.launch_default()
+            self.gridder()
 
         except Exception, e:
             message = "Unable to write directory '%s' because of the following error: %s." % (new_project_dir_name, e)
@@ -721,9 +722,7 @@ class PyMod:
         For development only. A the 'open_sequence_file', 'open_pdb_file' and
         'build_cluster_from_alignment_file' methods to import sequences when PyMod starts.
         """
-        self.open_sequence_file("/home/giacomo/Dropbox/sequences/modeling/pax/pax6.fasta")
-        self.open_pdb_file("/home/giacomo/Dropbox/sequences/modeling/pax/3cmy_pax.pdb")
-        # pass
+        pass
 
 
     def create_main_window_panes(self):
@@ -1300,12 +1299,9 @@ class PyMod:
 
             # Saves a pickle file with the information about the PyMod project. This will remove
             # Tkinter objects stored in the 'PyMod' object, because they can't be pickled.
-            project_pickle_file = open(os.path.join(project_temp_dir_path, "%s.pkl" % project_name), 'wb')
-            pickled_pymod = Pickled_PyMod()
-            pickled_pymod.pickle(self)
-            pickle.dump(pickled_pymod, project_pickle_file)
-            pickled_pymod.unpickle(self)
-            project_pickle_file.close()
+            project_pickled_file = open(os.path.join(project_temp_dir_path, "%s.pkl" % project_name), "w")
+            PyMod_Pickler(project_pickled_file).dump(self)
+            project_pickled_file.close()
 
             # Saves a PyMOL session.
             cmd.save(os.path.join(project_temp_dir_path, "%s.pse" % project_name))
@@ -1371,10 +1367,10 @@ class PyMod:
 
         # If some errors happens here, close PyMod.
         try:
-            # Unpickle the data.
-            project_pickle_file = open(os.path.join(project_temp_dir_path, "%s.pkl" % project_name), 'rb')
-            pickled_pymod = pickle.load(project_pickle_file)
-            pickled_pymod.load_data(self)
+            # Unpickle the data of the saved PyMod project.
+            project_pickle_file = open(os.path.join(project_temp_dir_path, "%s.pkl" % project_name), 'r')
+            project_dict = PyMod_Unpickler(project_pickle_file).load().__dict__
+            self.__dict__.update(project_dict)
             project_pickle_file.close()
 
             # Loads a PyMOL session.
@@ -1382,16 +1378,22 @@ class PyMod:
             cmd.load(os.path.join(project_temp_dir_path, "%s.pse" % project_name))
 
             # Copies the current project files in the directory.
+            os.chdir("..")
             shutil.rmtree(self.current_project_directory_full_path)
             src = os.path.join(project_temp_dir_path, os.path.basename(self.current_project_directory_full_path))
             dst = self.current_project_directory_full_path
             shutil.copytree(src, dst)
             os.chdir(self.current_project_directory_full_path)
+            # Rebuilds missing directories in the project folder.
+            dirs_to_write = (self.structures_directory, self.models_directory, self.alignments_directory, self.psipred_directory, self.similarity_searches_directory, self.images_directory, self.temp_directory_name)
+            for dir_to_write in dirs_to_write:
+                if not os.path.isdir(dir_to_write):
+                    os.mkdir(dir_to_write)
 
             # Builds a .zip file of the directory.
             shutil.rmtree(project_temp_dir_path)
 
-            # Updates PyMod.
+            # Updates PyMod main window.
             self.gridder()
 
         except Exception, e:
@@ -1408,6 +1410,24 @@ class PyMod:
         self.show_error_message(title, message)
         if not continue_session:
             self.main_window.destroy()
+
+
+    attributes_to_store = ["unique_index",
+                           "alignment_count",
+                           "new_clusters_counter",
+                           "logo_image_counter",
+                           "performed_modeling_count",
+                           "multiple_chain_models_count",
+                           "modeling_session_list",
+                           "blast_cluster_counter",
+                           "color_index",
+                           "pdb_list",
+                           "pymod_elements_list"]
+    lists_to_pickle = {}
+    attributes_to_pickle = []
+
+    def __getstate__(self):
+        return pymod_pickle(self)
 
 
     ###############################################################################################
@@ -10940,6 +10960,8 @@ class Parsed_pdb_file:
         if add_to_pymod_pdb_list:
             self.add_to_pdb_list()
 
+        self.parsed_biopython_structure = None
+
         # The sequence of the structure and the target sequences match.
         return True
 
@@ -11592,6 +11614,7 @@ class Disulfide_bridge:
 
 
 class PDB_file:
+
     def __init__(self,pdb_file_name,chains_list,segment_structure,clusterseq_elements):
         self.pdb_file_name = pdb_file_name
         # The list of chains ids ["A", "B", ...] in the original PDB file. This is needed when
@@ -11619,12 +11642,19 @@ class PDB_file:
     # Methods needed when saving and loading a PyMod project. -
     #----------------------------------------------------------
 
-    def store_information(self):
-        self.pymod_elements_ids = [element.unique_index for element in self.clusterseq_elements]
-        self.clusterseq_elements = None
+    def get_unique_index(self, element):
+        return element.unique_index
 
-    def load_information(self):
-        self.clusterseq_elements = [pymod.get_element_by_unique_index(unique_id) for unique_id in self.pymod_elements_ids]
+    attributes_to_store = ["pdb_file_name",
+                           "chains_list",
+                           "segment_structure",
+                           "chains_list",
+                           "clusterseq_elements"]
+    lists_to_pickle = {} # {"chains_list": ("get_unique_index", "unpickle")}
+    attributes_to_pickle = []
+
+    def __getstate__(self):
+        return pymod_pickle(self)
 
 
 class Modeling_session:
@@ -13472,115 +13502,85 @@ class PyMod_element: # ClusterSeq
             self.popup_menu_right.add_command(label="Center Residue in PyMOL", command=self.center_residue_in_pymol)
 
 
+    attributes_to_store = ["unique_index",
+                           "mother_index",
+                           "child_index",
+                           "is_mother",
+                           "is_child",
+                           "grid_position",
+                           "my_header_fix",
+                           "my_header",
+                           "my_sequence",
+                           "compact_header",
+                           "full_original_header",
+                           "pir_alignment_string",
+                           "annotations",
+                           "selected",
+                           "is_shown",
+                           "show_children",
+                           "button_state",
+                           "mother_button_color",
+                           "color_by",
+                           "my_color",
+                           "pymol_dss_list",
+                           "psipred_elements_list",
+                           "campo_scores",
+                           "dope_scores",
+                           "dope_items",
+                           "element_type",
+                           "is_blast_query",
+                           "is_lead",
+                           "is_bridge",
+                           "structure",
+                           "alignment",
+                           "is_model",
+                           "models_count",
+                           "polymer_type"]
+    attributes_to_pickle = []
+    lists_to_pickle = {}
+
+    def __getstate__(self):
+        return pymod_pickle(self)
+
+
 ###################################################################################################
 # STORE PROJECTS' INFORMATION IN PICKLE FILES.                                                    #
 ###################################################################################################
 
-class Pickled_PyMod:
-    """
-    Class to store the information of a PyMod project in a pickle file.
-    """
-
-    def __init__(self):
-        pass
-
-    def pickle(self, pymod):
-        """
-        Used when saving a PyMod session.
-        """
-        self._store_pdb_information(pymod)
-        self._transfer_data(source=pymod, target=self)
-        self.pymod_elements_list = [Pickled_PyMod_element(pymod_element) for pymod_element in pymod.pymod_elements_list]
-
-    def unpickle(self, pymod):
-        """
-        Used after having saved a PyMod session with the 'pickle()' method. This will restore some
-        information which was lost while using 'pickle()'.
-        """
-        self._load_pdb_information(pymod)
-
-    def load_data(self, pymod):
-        """
-        Used to load a session.
-        """
-        self._transfer_data(source=self, target=pymod)
-        pymod.pymod_elements_list = [pickled_element.get_pymod_element() for pickled_element in self.pymod_elements_list]
-        self._load_pdb_information(pymod)
+class PyMod_Pickler(pickle.Pickler):
+    pass
 
 
-    def _store_pdb_information(self, pymod):
-        """
-        Remove PyMod elements from 'PDB_file' objects, since they store Tkinter objects.
-        """
-        for pdb_file in pymod.pdb_list:
-            pdb_file.store_information()
+class PyMod_Unpickler(pickle.Unpickler):
 
-    def _load_pdb_information(self, pymod):
-        """
-        Assign back PyMod elements to 'PDB_file' objects.
-        """
-        for pdb_file in pymod.pdb_list:
-            pdb_file.load_information()
-
-    def _transfer_data(self, source, target):
-        target.unique_index = source.unique_index
-        target.pdb_list = source.pdb_list
-        target.alignment_count = source.alignment_count
-        target.new_clusters_counter = source.new_clusters_counter
-        target.logo_image_counter = source.logo_image_counter
-        target.performed_modeling_count = source.performed_modeling_count
-        target.multiple_chain_models_count = source.multiple_chain_models_count
-        target.modeling_session_list = source.modeling_session_list
-        target.blast_cluster_counter = source.blast_cluster_counter
-        target.current_project_name = source.current_project_name
-        target.current_project_directory_full_path = source.current_project_directory_full_path
-        target.color_index = source.color_index
+    def find_class(self, module, name):
+        # Subclasses may override this
+        try:
+            # Try the standard routine of pickle.
+            __import__(module)
+            mod = sys.modules[module]
+            klass = getattr(mod, name)
+            return klass
+        except:
+            # Build object by class name.
+            try:
+                name = name.rstrip("\n\r") # Needed to fix some old Windows versions behaviour.
+            except:
+                pass
+            return globals()[name]
 
 
-class Pickled_PyMod_element:
-    """
-    Class to store information of a PyMod element in a pickle file.
-    """
-    def __init__(self, pymod_element):
-        self.transfer_data(source=pymod_element, target=self)
-
-    def transfer_data(self, source, target):
-        target.unique_index = source.unique_index
-        target.mother_index = source.mother_index
-        target.child_index = source.child_index
-        target.is_mother = source.is_mother
-        target.is_child = source.is_child
-        target.grid_position = source.grid_position
-        target.my_header_fix = source.my_header_fix
-        target.my_header = source.my_header
-        target.my_sequence = source.my_sequence
-        target.compact_header = source.compact_header
-        target.full_original_header = source.full_original_header
-        target.pir_alignment_string = source.pir_alignment_string
-        target.annotations = source.annotations
-        target.selected = source.selected
-        target.is_shown = source.is_shown
-        target.show_children = source.show_children
-        target.button_state = source.button_state
-        target.mother_button_color = source.mother_button_color
-        target.color_by = source.color_by
-        target.my_color = source.my_color
-        target.pymol_dss_list = source.pymol_dss_list
-        target.psipred_elements_list = source.psipred_elements_list
-        target.campo_scores = source.campo_scores
-        target.dope_scores = source.dope_scores
-        target.dope_items = source.dope_items
-        target.element_type = source.element_type
-        target.is_blast_query = source.is_blast_query
-        target.is_lead = source.is_lead
-        target.is_bridge = source.is_bridge
-        target.structure = source.structure
-        target.alignment = source.alignment
-        target.is_model = source.is_model
-        target.models_count = source.models_count
-        target.polymer_type = source.polymer_type
-
-    def get_pymod_element(self):
-        pymod_element = PyMod_element("","")
-        self.transfer_data(source=self, target=pymod_element)
-        return pymod_element
+def pymod_pickle(obj):
+    attributes_to_store = obj.attributes_to_store
+    lists_to_pickle = obj.lists_to_pickle
+    attributes_to_pickle = obj.attributes_to_pickle
+    d = dict(obj.__dict__)
+    for k in d.keys():
+        if k in attributes_to_store:
+            pass
+        elif k in lists_to_pickle.keys():
+            method_name = lists_to_pickle[k][0]
+            d[k] = [getattr(list_item, method_name)() for list_item in d[k]]
+        else:
+            del d[k]
+    return d

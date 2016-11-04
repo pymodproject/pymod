@@ -448,8 +448,8 @@ def zip_directory(directory_path, zipfile_path, use_dirname_root=True):
         # z.write(absolute_path, relative_path)
         if not use_dirname_root:
             relative_path = os.path.sep.join(relative_path.split(os.path.sep)[1:])
-        for d in dirs:
-            zipfile_handle.write(os.path.join(root, d), os.path.join(relative_path, d))
+        # for d in dirs:
+        #     zipfile_handle.write(os.path.join(root, d), os.path.join(relative_path, d))
         for f in files:
             zipfile_handle.write(os.path.join(root, f), os.path.join(relative_path, f))
     zipfile_handle.close()
