@@ -1411,7 +1411,7 @@ class PyMod:
         if not continue_session:
             self.main_window.destroy()
 
-
+    # Set the attributes to store when an object of this class is pickled.
     attributes_to_store = ["unique_index",
                            "alignment_count",
                            "new_clusters_counter",
@@ -1427,6 +1427,9 @@ class PyMod:
     attributes_to_pickle = []
 
     def __getstate__(self):
+        """
+        Used to build a dict with only the 'attributes_to_store' when pickling.
+        """
         return pymod_pickle(self)
 
 
@@ -13554,7 +13557,13 @@ class PyMod_Pickler(pickle.Pickler):
 class PyMod_Unpickler(pickle.Unpickler):
 
     def find_class(self, module, name):
-        # Subclasses may override this
+        """
+        Overridden from the original 'Unpickler' class. Needed to rebuild PyMod object which have
+        complex modules names. 'Unpickler' rebuilds objects using the 'fully qualified' name
+        reference of their classes (the class name is pickled, along with the name of the module the
+        class is defined in). Since PyMOL plugin modules may yield different 'fully qualified' names
+        depending on the system, PyMod objects are rebuilt using only the name of their classes.
+        """
         try:
             # Try the standard routine of pickle.
             __import__(module)
