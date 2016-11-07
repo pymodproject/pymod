@@ -7,10 +7,22 @@ import pymod_os_specific as pmos
 
 
 url_base = "http://schubert.bio.uniroma1.it/downloads/"
-plugin_zipfile_name = "pymod_stable.zip"
-plugin_releasefile_name = "pymod_stable.txt"
+# Stable version.
+stable_plugin_zipfile_name = "pymod_stable.zip"
+stable_plugin_releasefile_name = "pymod_stable.txt"
+# Unstable version.
+unstable_plugin_zip_file_name = "pymod_unstable.zip"
+unstable_plugin_releasefile_name = "pymod_unstable.txt"
+
+update_to_unstable = False
+if update_to_unstable:
+    plugin_zipfile_name = unstable_plugin_zip_file_name
+    plugin_releasefile_name = unstable_plugin_releasefile_name
+else:
+    plugin_zipfile_name = stable_plugin_zipfile_name
+    plugin_releasefile_name = stable_plugin_releasefile_name
+
 print_info = False
-# urllib.urlretrieve(url_base+"/"+code+".pdb", code+".pdb")
 
 
 def check_for_updates(pymod_version, pymod_release):
