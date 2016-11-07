@@ -10791,7 +10791,7 @@ class Parsed_pdb_file:
             # Builds a Structure object that will be given to the PyMod_element object that is
             # going to be created below.
             structure_object = Structure(
-                biopython_structure = self.parsed_biopython_structure,
+                biopython_structure = None,
                 pdb_chain_sequence = parsed_chain["pdb_sequence"],
                 pdb_chain_id = parsed_chain["id"],
                 original_pdb_file_name = self.copied_pdb_file_name,
@@ -10962,8 +10962,6 @@ class Parsed_pdb_file:
 
         if add_to_pymod_pdb_list:
             self.add_to_pdb_list()
-
-        self.parsed_biopython_structure = None
 
         # The sequence of the structure and the target sequences match.
         return True
