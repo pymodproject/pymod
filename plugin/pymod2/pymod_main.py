@@ -4461,7 +4461,7 @@ class PyMod:
             if self.blast_window.showing_advanced_widgets:
                 self.min_id = self.min_id_enf.getvalue()
                 self.min_coverage = self.min_coverage_enf.getvalue()
-            result_handle = NCBIWWW.qblast("blastp",
+            result_handle = pmsp.qblast("blastp",
                 self.get_ncbiblast_database(),
                 query_seq,
                 hitlist_size=self.max_hits_enf.getvalue(),
