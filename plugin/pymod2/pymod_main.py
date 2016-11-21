@@ -12978,7 +12978,9 @@ class PyMod_element: # ClusterSeq
         # Colors all the residues of a structure with the same color.
         else:
             cmd.color(self.my_color,chain_sel)
-        cmd.util.cnc(chain_sel) # Colors by atom.
+        # Colors by atom.
+        if self.color_by == "regular":
+            cmd.util.cnc(chain_sel)
 
 
     def get_residue_color(self, residue_ids, color_target, residues_to_color="all"):
