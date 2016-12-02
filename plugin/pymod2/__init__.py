@@ -86,7 +86,7 @@ if (not numpy_found or not biopython_found) and os.path.isdir(python_libs_dirpat
 global __version__
 __version__ = "2.0"
 global __revision__
-__revision__ = "6"
+__revision__ = "7"
 global pymod_plugin_name
 pymod_plugin_name = "PyMod " + __version__
 
