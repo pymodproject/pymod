@@ -2648,6 +2648,23 @@ class PyMod:
             self.import_from_pymol_window.destroy()
 
 
+    def pymol_save(self, filepath, selection_name):
+        """
+        Calls the 'cmd.save' function of PyMOL, but retains the order of the atoms in the original
+        PDB file.
+        """
+        try:
+            old_retain_order = cmd.get("retain_order")
+            cmd.set("retain_order", 1)
+        except:
+            pass
+        cmd.save(filepath, selection_name)
+        try:
+            cmd.set("retain_order", old_retain_order)
+        except:
+            pass
+
+
     def show_pdb_info(self):
         self.work_in_progress()
 
@@ -7155,8 +7172,8 @@ class PyMod:
             # And saves these new files.
             aligned_pdb_file1 = os.path.join(self.structures_directory, saved_file1)
             aligned_pdb_file2 = os.path.join(self.structures_directory, saved_file2)
-            cmd.save(aligned_pdb_file1, sel1)
-            cmd.save(aligned_pdb_file2, sel2)
+            self.pymol_save(aligned_pdb_file1, sel1)
+            self.pymol_save(aligned_pdb_file2, sel2)
 
             # Finally saves the structural alignment between the sequences.
             cmd.save(os.path.join(self.alignments_directory, ce_output_file_name+".aln"),"pymod_temp_cealign")
@@ -7337,7 +7354,7 @@ class PyMod:
                     cmd.super(pdb_file_name_root,"salign_fixed_fit")
                 else: # PyMOL 0.99 does not have cmd.super
                     cmd.align(pdb_file_name_root,"salign_fixed_fit")
-                cmd.save(fixed,pdb_file_name_root) # quick-and-dirty
+                self.pymol_save(fixed,pdb_file_name_root) # quick-and-dirty
                 cmd.delete("salign_fixed_fit")
 
             # Updates the name of the chains PDB files.
@@ -8556,7 +8573,7 @@ class PyMod:
         else: # PyMOL 0.99 does not have cmd.super
             cmd.align(selector_1, selector_2)
         if save_superposed_structure:
-            cmd.save(os.path.join(self.structures_directory, selector_1+".pdb"), selector_1)
+            self.pymol_save(os.path.join(self.structures_directory, selector_1+".pdb"), selector_1)
 
 
 
@@ -9740,7 +9757,7 @@ class PyMod:
                     # Superpose the full model complex file on the template complex using PyMOL.
                     self.superpose_in_pymol(mc_temp_pymol_name,tc_temp_pymol_name, save_superposed_structure=False)
                     # Saves the new superposed file in the structures directory.
-                    cmd.save(model_file_shortcut_in_str_dir,mc_temp_pymol_name)
+                    self.pymol_save(model_file_shortcut_in_str_dir,mc_temp_pymol_name)
                     # Superpose single model chains to the correspondig one of the full model
                     # complex.
                     for me in model_chain_elements:
@@ -10920,7 +10937,7 @@ class Parsed_pdb_file:
         # Join the selections and save a file PDB file of the cropped fragment.
         pdb_basename = os.path.splitext(t_element.structure.original_pdb_file_name)[0]
         cropped_structure_file_shortcut = os.path.join(pymod.structures_directory, pdb_basename)
-        cmd.save("%s_cropped.pdb" % (cropped_structure_file_shortcut), "ppfragment")
+        pymod.pymol_save("%s_cropped.pdb" % (cropped_structure_file_shortcut), "ppfragment")
         # Clean up the selections.
         cmd.delete("full")
         cmd.delete("ppfragment")
