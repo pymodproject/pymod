@@ -1,5 +1,5 @@
 from Tkinter import *
-from tkFileDialog import *
+from tkFileDialog import askopenfilename, askdirectory
 import tkMessageBox
 import tkFont
 import Pmw
@@ -61,7 +61,8 @@ modeling_window_title_style = {"font": "comic 12", "height": 1,
                         "fg":'red', "borderwidth" : 0,
                         "padx" : 20, "pady" : 7}
 
-template_title_options = {"font": tkFont.Font(family="comic",size=10,slant="italic"), "background": widgets_background_color, "fg":'red', "anchor":"w"}
+template_title_options = {"font": "comic 10", # tkFont.Font(family="comic",size=10,slant="italic"),
+                          "background": widgets_background_color, "fg":'red', "anchor":"w"}
 
 modeling_options_sections_style = {"font": "comic 11", "background": widgets_background_color,
         "fg":'white', # orange, wheat1, orange red

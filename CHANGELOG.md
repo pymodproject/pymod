@@ -1,6 +1,9 @@
 # PyMod 2 Changelog
 This file contains descriptions of changes of new PyMod 2 releases.
 
+## Version 2.0.8 (2/11/2017)
+- Introduced a series of fixes to add compatibility to PyMOL 2.0.
+
 ## Version 2.0.7 (2/12/2016)
 - Fixed a bug that changed the atom order of structures when performing CE alignments with PyMOL.
 

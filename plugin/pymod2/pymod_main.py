@@ -21,7 +21,7 @@
 
 # Tkinter.
 from Tkinter import *
-from tkFileDialog import *
+from tkFileDialog import askopenfilename, asksaveasfilename, askdirectory
 import tkMessageBox
 import Pmw
 
@@ -948,7 +948,7 @@ class PyMod:
 
     def show_about_dialog(self):
         Pmw.aboutversion(self.pymod_version + "." + self.pymod_revision)
-        Pmw.aboutcopyright('Copyright (C): 2016 Giacomo Janson, Chengxin Zhang,\nAlessandro Paiardini')
+        Pmw.aboutcopyright('Copyright (C): 2017 Giacomo Janson, Chengxin Zhang,\nAlessandro Paiardini')
         Pmw.aboutcontact(
             'For information on PyMod %s visit:\n' % (self.pymod_version) +
             '  http://schubert.bio.uniroma1.it/pymod/documentation.html\n\n' +
@@ -1992,7 +1992,11 @@ class PyMod:
         This method is called when new sequences are loaded from the main menu.
         """
         # Creates a tkinter widget that lets the user select multiple files.
-        file_names = askopenfilename(filetypes=pmdt.supported_file_types, multiple=True, parent=self.main_window)
+        try:
+            file_names = askopenfilename(filetypes=pmdt.supported_file_types, multiple=True, parent=self.main_window)
+        except: # PyMOL 2.0 fix.
+            file_names = askopenfilename(multiple=True, parent=self.main_window)
+
         for single_file_name in pmos.get_askopenfilename_tuple(file_names):
             extension = os.path.splitext(os.path.basename(single_file_name))[1].replace(".","")
             if extension.lower() == "fasta":
