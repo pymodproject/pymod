@@ -180,9 +180,16 @@ class PyMod_plot_window_qt(QtWidgets.QMainWindow):
 
         self.plot_count = 0
         self.plot_items = {}
-        self.interact_mode = False
-        self.previously_selected_point = None
         self.plot_color_index = 0
+
+        self.interact_mode = False
+        self.selected_plot_item = None
+        self.previous_highlight_dot = None
+        self.previous_highlight_plot_id = None
+
+        self.all_points = []
+        self.all_points_info = []
+
 
         # PlotWidget from pyqtgraph.
         self.graphWidget = pyqtgraph.PlotWidget()
@@ -332,12 +339,6 @@ class PyMod_plot_window_qt(QtWidgets.QMainWindow):
 
         if self.on_click_action is not None:
             self.graphWidget.getViewBox().scene().sigMouseClicked.connect(self.on_scene_click)
-            self.selected_plot_item = None
-            self.previous_highlight_dot = None
-            self.previous_highlight_plot_id = None
-
-            self.all_points = []
-            self.all_points_info = []
 
 
     def on_scene_click(self, event):
@@ -570,14 +571,6 @@ class PyMod_plot_window_qt(QtWidgets.QMainWindow):
         self.previous_highlight_dot = None
         self.previous_highlight_plot_id = None
 
-    def get_hidden_pen(self):
-        symbol_pen = pyqtgraph.mkPen(width=0, color=QtGui.QColor(255, 255, 255, 0))
-        return symbol_pen
-
-    def get_interaction_pen(self):
-        symbol_pen = pyqtgraph.mkPen(width=1, color=QtGui.QColor(0, 0, 0, 100))
-        return symbol_pen
-
 
     #----------------------------------------------------------------
     # Events called when pressing the control buttons of the window.-
@@ -588,18 +581,11 @@ class PyMod_plot_window_qt(QtWidgets.QMainWindow):
 
 
     def on_interact_button_click(self):
-        for plot_idx in self.plot_items:
-            symbol_pen = self.get_interaction_pen()
-            self.plot_items[plot_idx]["plot"].scatter.setPen(symbol_pen)
         self.interact_mode = True
 
     def on_no_interaction_button_click(self):
-        if self.previously_selected_point is not None:
-            self.previously_selected_point.resetPen()
-            self.previously_selected_point.resetBrush()
-        for plot_idx in self.plot_items:
-            symbol_pen = self.get_hidden_pen()
-            self.plot_items[plot_idx]["plot"].scatter.setPen(symbol_pen)
+        if self.previous_highlight_plot_id is not None:
+            self.remove_highlight_dot()
         self.interact_mode = False
 
 

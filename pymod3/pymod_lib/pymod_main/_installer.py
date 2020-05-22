@@ -510,10 +510,9 @@ class External_tools_installation_thread(QtCore.QThread):
 
     # Name of the PyMod tools present in the installer package.
     tool_names = ["clustalw", "muscle", "clustalo", "blast_plus", "psipred", "ksdssp", "hmmer"]
-    # Tools which might be already present on users' systems.
-    # tools_on_users_system = ["clustalw", "muscle", "clustalo", "blast_plus", "hmmer"]
+
     # Name of the data directories of the installer.
-    data_components_names = [blast_databases_dirname, hmmer_databases_dirname] #, hmmscan_databases_dirname]
+    data_components_names = [blast_databases_dirname, hmmer_databases_dirname]
 
     def set_params(self, archive_filepath,
                    backup_archive_filepath,
@@ -534,9 +533,9 @@ class External_tools_installation_thread(QtCore.QThread):
         self.os_arch = os_arch
         self.use_blast_v5_databases = use_blast_v5_databases
         if self.use_blast_v5_databases:
-            self.default_psipred_db = "swissprot_v4"
-        else:
             self.default_psipred_db = "swissprot"
+        else:
+            self.default_psipred_db = "swissprot_v4"
         self.from_main_window = from_main_window
 
         self.pymod_external_tools_dirpath = os.path.join(self.pymod_dirpath, self.external_tools_dirname)

@@ -86,7 +86,7 @@ except ImportError:
 
 # Sets the version of the PyMod plugin.
 __pymod_version__ = "3.0"
-__revision__ = "0.0"
+__revision__ = "0"
 __version__ = float(__pymod_version__ + __revision__.replace(".", ""))
 pymod_plugin_name = "PyMod " + __pymod_version__
 
