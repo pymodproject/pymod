@@ -1,5 +1,25 @@
-# PyMod 2 Changelog
-This file contains descriptions of changes of new PyMod 2 releases.
+# PyMod 3 Changelog
+This file contains descriptions of changes of new PyMod 3 releases.
+
+## Version 3.0.0 (22/5/2020)
+- Updated the PyMod GUI using PyQt5.
+- Homology modeling using MODELLER. Implemented various changes, some of them are:
+    - Customize the optimization schedule of MODELLER.
+    - Customize the MODELLER objective function terms.
+    - Added the GA341 scoring function for model evaluation.
+    - When building oligomeric models, added the SOAP-PP scoring function for interfaces evaluation.
+    - Added sortable tables for model evaluation.
+    - Added the possibility to use parallel jobs when building multiple models.
+    - Solved a series of bugs which did not allow to use some PDB structures as templates.
+- Added the possibility to perform loop modeling (with MODELLER) for elements that have a 3D structure loaded in PyMod/PyMOL.
+- Added the SCR_FIND protocol (for analyzing the conservation in multiple structural alignments).
+- Added the possibility to use the following HMMER programs:
+    - phmmer, jackhmmer, hmmsearch (for searching protein sequence databases)
+    - hmmscan (for searching profile HMM databases). hmmscan can be used as a tool to assign Pfam domain families.
+- Added an easy-to-use dialog to install all PyMod external tools.
+- Added an easy-to use dialog to update the sequence databases for the external tools of PyMod.
+- Added a contact/distance map viewer feature.
+- Added a series of other small functionalities (please refer to the updated PyMod manual for a full list of them).
 
 ## Version 2.0.8 (2/11/2017)
 - Introduced a series of fixes to add compatibility to PyMOL 2.0.

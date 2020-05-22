@@ -81,7 +81,7 @@ class PyMod(PyMod_main_menu_commands,
         self.pymod_revision = pymod_revision
 
         self.DEVELOP = False
-        self.TEST = True
+        self.TEST = False
 
         self.app = app
 
