@@ -11,12 +11,12 @@ PyMod 3 runs on Windows, macOS and Linux versions of PyMOL. It is compatible wit
 PyMod 3 plugin file (current version 3.0.0): [download from here](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod3.zip "PyMod 3 plugin file for PyMOL")
 
 ## Installation
-Please refer to the PyMod 3.0 User's Guide (see the link below) to learn how to install PyMod 3 on your system. Long story short: PyMod 3 can be installed as any other PyMOL plugin. Download the plugin ZIP file from the link above, and use the PyMOL plugin manager (**_Plugin -> Plugin Manager_** from the menu of its main window) to install it. The external tools of PyMod 3 can be obtained and configured through an easy-to-use installer dialog which can be launched by the plugin (**_Help -> Install PyMod Components_** from the main menu of PyMod 3). The way to configure MODELLER in PyMod may vary according to your PyMOL version (in the User's Guide we cover different scenarios).
+Please refer to the PyMod 3.0 User's Guide (see the link below) to learn how to install PyMod 3 on your system. Long story short: PyMod 3 can be installed as any other PyMOL plugin. Download the PyMod 3 plugin file (a ZIP file named *pymod3.zip* see the link above) and use the PyMOL plugin manager (**_Plugin -> Plugin Manager_** from the menu of its main window) to install it. The external tools of PyMod 3 can be obtained and configured through an easy-to-use installer dialog which can be launched by the plugin (**_Help -> Install PyMod Components_** from the main menu of the plugin). The way to configure MODELLER in PyMod may vary according to your PyMOL version (in the User's Guide we cover different scenarios).
 
 ## How to use PyMod
 A series of introductory tutorials and in-depth information about all the PyMod 3 functionalities can be found in its User's Guide.
 
-User's guide: [download from here](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod_users_guide.pdf "PyMod 3 User's guide")
+User's Guide: [download from here](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod_users_guide.pdf "PyMod 3 User's guide")
 
 Home page (to be updated soon): http://schubert.bio.uniroma1.it/pymod/index.html
 
