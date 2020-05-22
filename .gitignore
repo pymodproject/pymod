@@ -1,5 +1,2 @@
+__pycache__/
 *.pyc
-*.so
-*.pyd
-installer
-TODO
