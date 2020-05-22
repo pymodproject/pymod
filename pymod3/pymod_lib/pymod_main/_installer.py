@@ -34,9 +34,9 @@ tools_installer_log_filename = "pymod_installer_log.txt"
 
 allowed_platforms = ("linux", "darwin", "win32")
 
-packages_url_dict = {"linux":  "https://github.com/pymodproject/pymod/releases/download/3.0-alpha/linux_pymod_3.0_installer_bundle.zip",
-                     "darwin": "https://github.com/pymodproject/pymod/releases/download/3.0-alpha/macosx_pymod_3.0_installer_bundle.zip",
-                     "win32":  "https://github.com/pymodproject/pymod/releases/download/3.0-alpha/windows_pymod_3.0_installer_bundle.zip"}
+packages_url_dict = {"linux":  "https://github.com/pymodproject/pymod/releases/download/v3.0/linux_pymod_3.0_installer_bundle.zip",
+                     "darwin": "https://github.com/pymodproject/pymod/releases/download/v3.0/macos_pymod_3.0_installer_bundle.zip",
+                     "win32":  "https://github.com/pymodproject/pymod/releases/download/v3.0/windows_pymod_3.0_installer_bundle.zip"}
 use_external_tools_local_install = False
 
 python_minor_version = "%s.%s" % (sys.version_info.major, sys.version_info.minor)
