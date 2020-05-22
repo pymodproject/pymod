@@ -17,9 +17,9 @@ This file contains descriptions of changes of new PyMod 3 releases.
     - phmmer, jackhmmer, hmmsearch (for searching protein sequence databases)
     - hmmscan (for searching profile HMM databases). hmmscan can be used as a tool to assign Pfam domain families.
 - Added an easy-to-use dialog to install all PyMod external tools.
-- Added an easy-to use dialog to update the sequence databases for the external tools of PyMod.
+- Added an easy-to-use dialog to update the sequence databases for the external tools of PyMod.
 - Added a contact/distance map viewer feature.
-- Added a series of other small functionalities (please refer to the updated PyMod manual for a full list of them).
+- Added a series of other small functionalities and fixes (please refer to the updated PyMod manual for a full list of them).
 
 ## Version 2.0.8 (2/11/2017)
 - Introduced a series of fixes to add compatibility to PyMOL 2.0.
