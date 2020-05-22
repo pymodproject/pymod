@@ -1,3 +1,8 @@
+"""
+Script for building a PyMOL plugin ZIP file for PyMod 3. You must run this in the
+root folder of the repository.
+"""
+
 import os
 import argparse
 import datetime
@@ -7,11 +12,11 @@ import zipfile
 # Parses the commandline.
 parser = argparse.ArgumentParser()
 parser.add_argument("-r", "--revision", help="Number of the plugin revision for this day.", type=int, default=None)
-parser.add_argument("-p", "--pymod_plugin_dirpath", help="Path of th 'pymod3'.", type=str, default="pymod3")
+parser.add_argument("-p", "--pymod_plugin_dirpath", help="Path of the 'pymod3' directory.", type=str, default="pymod3")
 cmd = parser.parse_args()
 
 
-# Name of the PyMOL plugin file .zip file.
+# Name of the PyMOL plugin file ZIP file.
 if cmd.revision is None:
     plugin_archive_name = "pymod3.zip"
 else:
@@ -23,6 +28,7 @@ else:
 target_filepath = plugin_archive_name
 
 
+# Actually writes the plugin ZIP file.
 print("- Building a PyMOL plugin file from directory: %s" % cmd.pymod_plugin_dirpath)
 walk_data = os.walk(cmd.pymod_plugin_dirpath)
 
