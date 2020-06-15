@@ -1,6 +1,9 @@
 # PyMod 3 Changelog
 This file contains descriptions of changes of new PyMod 3 releases.
 
+## Version 3.0.1 (15/6/2020)
+- Fixed the PDB fetching functionality (updated to HTTPS urls on RCSB).
+
 ## Version 3.0.0 (22/5/2020)
 - Updated the PyMod GUI using PyQt5.
 - Homology modeling using MODELLER. Implemented various changes, some of them are:

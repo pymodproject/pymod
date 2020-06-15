@@ -196,7 +196,7 @@ class Structure_file_fetcher:
         """
         Actually retrieves the PDB file from the internet.
         """
-        pdb_url = "http://www.rcsb.org/pdb/files/%s.pdb.gz" % self.pdb_code
+        pdb_url = "https://files.rcsb.org/download/%s.pdb.gz" % self.pdb_code
         temp_gzip_file_name = urllib.request.urlretrieve(pdb_url)[0]
         open_gzip_file = gzip.open(temp_gzip_file_name) # Uncompress the file while reading
         output_path = os.path.join(self.output_dir, self.output_name)
