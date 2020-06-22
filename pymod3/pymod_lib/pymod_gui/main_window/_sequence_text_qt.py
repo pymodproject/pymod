@@ -32,7 +32,7 @@ class MyQLabel_sequence(QtWidgets.QLabel):
 
         QtWidgets.QLabel.__init__(self, " ")
 
-        self.setTextFormat(1) # Set the text format as 'RichText' in order to display html.
+        self.setTextFormat(QtCore.Qt.RichText) # Set the text format as 'RichText' in order to display html.
         self.parent_group = parent_group
 
         self.setMouseTracking(True)

@@ -114,15 +114,16 @@ class PyMod_element_widgets_group_qt():
 
         if self.old_grid_row_index != self.grid_row_index:
 
-            i1 = self.main_window.central_widget.id_form_layout.itemAt(self.grid_row_index, 2)
+            form_layout = self.main_window.central_widget.id_form_layout
+            i1 = form_layout.itemAt(self.grid_row_index, form_layout.SpanningRole)
 
-            if i1 != None:
+            if i1 is not None:
                 if not i1.widget() is self.header_entry:
                     self.main_window.central_widget.id_form_layout.removeItem(i1)
                     i1.widget().setVisible(False)
                     self.main_window.central_widget.id_form_layout.removeWidget(self.header_entry)
 
-            self.main_window.central_widget.id_form_layout.setWidget(self.grid_row_index, 2, self.header_entry)
+            form_layout.setWidget(self.grid_row_index, form_layout.SpanningRole, self.header_entry)
 
         if not self.header_entry.isVisible():
             self.header_entry.setVisible(True)
@@ -164,32 +165,33 @@ class PyMod_element_widgets_group_qt():
 
         # Change the widget position only if its 'grid_row_index' has changed.
         if self.old_grid_row_index != self.grid_row_index:
+            form_layout = self.main_window.central_widget.seq_form_layout
 
             # Get the sequence widget present in the row in which the current widget has to be placed.
-            i1 = self.main_window.central_widget.seq_form_layout.itemAt(self.grid_row_index, 1)
+            i1 = form_layout.itemAt(self.grid_row_index, form_layout.FieldRole)
 
             # If there is a widget in the target positio, it will be removed to make place for the
             # current widget.
-            if i1 != None:
+            if i1 is not None:
                 # if not i1.widget() is self.sequence_text:
 
                     # Remove the target sequence widget.
+                    i1.widget().setVisible(False)  # TODO is this needed?
                     self.main_window.central_widget.seq_form_layout.removeItem(i1)
-                    i1.widget().setVisible(False)
                     # Remove the current sequence widget.
                     self.main_window.central_widget.seq_form_layout.removeWidget(self.sequence_text)
 
                     # Cluster buttons.
-                    i2 = self.main_window.central_widget.seq_form_layout.itemAt(self.grid_row_index, 0)
+                    i2 = form_layout.itemAt(self.grid_row_index, form_layout.LabelRole)
                     # Remove the target cluster button widget.
+                    i2.widget().setVisible(False)  # TODO is this needed?
                     self.main_window.central_widget.seq_form_layout.removeItem(i2)
-                    i2.widget().setVisible(False)
                     # Remove the current cluster button widget.
                     self.main_window.central_widget.seq_form_layout.removeWidget(self.cluster_button)
 
             # Sets the current widgets.
-            self.main_window.central_widget.seq_form_layout.setWidget(self.grid_row_index, 1, self.sequence_text)
-            self.main_window.central_widget.seq_form_layout.setWidget(self.grid_row_index, 0, self.cluster_button)
+            form_layout.setWidget(self.grid_row_index, form_layout.FieldRole, self.sequence_text)
+            form_layout.setWidget(self.grid_row_index, form_layout.LabelRole, self.cluster_button)
 
         # Show the current widgets.
         if not self.sequence_text.isVisible():
