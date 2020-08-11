@@ -37,6 +37,7 @@ from pymod_lib.pymod_protocols.similarity_searches_protocols.psiblast import PSI
 from pymod_lib.pymod_protocols.similarity_searches_protocols.phmmer import PHMMER_search
 from pymod_lib.pymod_protocols.similarity_searches_protocols.jackhmmer import Jackhmmer_search
 from pymod_lib.pymod_protocols.similarity_searches_protocols.hmmsearch import Hmmsearch_search
+from pymod_lib.pymod_protocols.similarity_searches_protocols.import_hhsuite import Import_HHsuite_results
 
 from pymod_lib.pymod_protocols.alignment_protocols.clustalw import Clustalw_regular_alignment, Clustalw_profile_alignment
 from pymod_lib.pymod_protocols.alignment_protocols.clustalo import Clustalomega_regular_alignment, Clustalomega_profile_alignment
@@ -121,6 +122,15 @@ class PyMod_main_menu_commands:
         if not None in (openfilename, extension):
             self.build_cluster_from_alignment_file(openfilename, extension)
         self.main_window.gridder(update_menus=True, update_elements=True)
+
+
+    #-----------
+    # HHsuite. -
+    #-----------
+
+    def open_hhsuite_hhr_from_main_menu(self):
+        import_protocol = Import_HHsuite_results(self, output_directory=self.similarity_searches_dirpath)
+        import_protocol.launch_from_gui()
 
 
     #################################################################

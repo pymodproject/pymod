@@ -396,7 +396,6 @@ class Generic_BLAST_search(PyMod_protocol):
         self.blast_output_window = Similarity_searches_results_window_qt(parent=self.pymod.main_window,
                                                            protocol=self)
         self.blast_output_window.show()
-        # self.blast_output_window.resize(1200, 700)
 
 
     def build_hsp_list(self):
@@ -784,7 +783,7 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
         # Configure the window. #
         #########################
 
-        self.setWindowTitle("%s Results" % self.protocol.blast_version_full_name)
+        self.setWindowTitle(self._get_window_title())
 
         # Sets the central widget.
         self.central_widget = QtWidgets.QWidget()
@@ -798,10 +797,7 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
         # Upper frame. #
         ################
 
-        title_text = ("%s Output for: %s\nFound %s sequences\nPlease Select the Sequences to"
-                      " Import" % (self.protocol.blast_version_full_name,
-                                   self.protocol.blast_query_element.compact_header,
-                                   len(self.protocol.hsp_list)))
+        title_text = self._get_upper_frame_title()
 
         self.upper_frame_title = QtWidgets.QLabel(title_text)
         self.main_vbox.addWidget(self.upper_frame_title)
@@ -888,6 +884,18 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
         # Sets the main vertical layout.
         self.central_widget.setLayout(self.main_vbox)
         self.main_vbox.setAlignment(self.main_button, QtCore.Qt.AlignCenter)
+
+
+    def _get_window_title(self):
+        return "%s Results" % self.protocol.blast_version_full_name
+
+
+    def _get_upper_frame_title(self):
+        title_text = ("%s Output for: %s\nFound %s sequences\nPlease Select the Sequences to"
+                      " Import" % (self.protocol.blast_version_full_name,
+                                   self.protocol.blast_query_element.compact_header,
+                                   len(self.protocol.hsp_list)))
+        return title_text
 
 
     def display_blast_hits(self):

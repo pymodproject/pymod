@@ -92,12 +92,12 @@ class Fetch_structure_file(PyMod_protocol):
         # Warns the user if some structure files could not be fetched.
         n_failures = len([r for r in self.fetch_results_list if r["failure"]])
         if n_failures != 0:
-            title = "Connection Error"
+            title = "Download Error"
             message = ("Can not access the PDB database to download %s structures out of %s."
                        "\nPlease check your Internet connection or if the PDB ids of the"
                        " structures are valid." % (n_failures, len(self.structures_to_fetch)))
             self.pymod.main_window.show_warning_message(title, message)
-            if n_failures == 0:
+            if n_failures == len(self.fetch_results_list):
                 return None
 
         # Actually loads the elements in PyMod.
