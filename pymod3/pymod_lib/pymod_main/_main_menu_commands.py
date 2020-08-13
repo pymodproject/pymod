@@ -124,13 +124,17 @@ class PyMod_main_menu_commands:
         self.main_window.gridder(update_menus=True, update_elements=True)
 
 
-    #-----------
-    # HHsuite. -
-    #-----------
+    #------------
+    # HH-suite. -
+    #------------
 
     def open_hhsuite_hhr_from_main_menu(self):
         import_protocol = Import_HHsuite_results(self, output_directory=self.similarity_searches_dirpath)
-        import_protocol.launch_from_gui()
+        import_protocol.launch_from_gui(mode="hhr")
+
+    def open_hhsuite_a3m_from_main_menu(self):
+        import_protocol = Import_HHsuite_results(self, output_directory=self.similarity_searches_dirpath)
+        import_protocol.launch_from_gui(mode="a3m")
 
 
     #################################################################

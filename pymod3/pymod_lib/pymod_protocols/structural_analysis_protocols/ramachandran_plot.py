@@ -228,7 +228,7 @@ class Ramachandran_plot_options_window_qt(PyMod_protocol_window_qt):
 
     def show_select_single_aa_frame(self):
         for aa in prot_standard_one_letter:
-            # Only enable selection of aa present in primary sequence.
+            # Only enable selection of aa present in protein sequence.
             if self.aa_freq_dict[aa] != 0:
                 self.aa_checkbutton[aa].setEnabled(True)
 

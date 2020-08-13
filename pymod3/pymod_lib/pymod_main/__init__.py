@@ -81,9 +81,9 @@ class PyMod(PyMod_main_menu_commands,
         self.pymod_revision = pymod_revision
 
         # Set to 'True' when developing, useful for debugging.
-        self.DEVELOP = True
+        self.DEVELOP = False
         # Set to 'True' to perform some tests on sequences/structures from the GUI.
-        self.TEST = True
+        self.TEST = False
 
         self.app = app
 

@@ -52,12 +52,12 @@ class PyMod_main_window_main_menu:
         self.external_results_submenu = QtWidgets.QMenu('External Programs Results', self)
         self.file_menu.addMenu(self.external_results_submenu)
 
-        self.hhsuite_results_submenu = QtWidgets.QMenu('HHsuite', self)
+        self.hhsuite_results_submenu = QtWidgets.QMenu('HH-suite', self)
         self.external_results_submenu.addMenu(self.hhsuite_results_submenu)
         add_qt_menu_command(self.hhsuite_results_submenu, 'Template Search (.hhr)',
                             self.pymod.open_hhsuite_hhr_from_main_menu)
-        # add_qt_menu_command(self.hhsuite_results_submenu, 'Multiple Sequence Alignment (.a3m)',
-        #                     self.pymod.open_alignment_from_main_menu)
+        add_qt_menu_command(self.hhsuite_results_submenu, 'Multiple Sequence Alignment (.a3m)',
+                            self.pymod.open_hhsuite_a3m_from_main_menu)
 
 
         self.file_menu.addSeparator()

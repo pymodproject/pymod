@@ -137,7 +137,7 @@ class Parsed_pdb_file:
                     # For HETATM residues.
                     if hetfield[0] == "H":
                         # Check if the current HETRES is a modified residue. Modified residues will
-                        # be added to the primary sequence.
+                        # be added to the sequence.
                         if self._check_modified_residue(residue, chain):
                             parsed_chain["residues"].append(pymod_residue.PyMod_modified_residue(three_letter_code=resname, one_letter_code=pymod_vars.modified_residue_one_letter, db_index=pdb_position))
                         else:
@@ -145,7 +145,7 @@ class Parsed_pdb_file:
                     # For water molecules.
                     elif hetfield == "W":
                         parsed_chain["residues"].append(pymod_residue.PyMod_water_molecule(three_letter_code=resname, one_letter_code=pymod_vars.water_one_letter, db_index=pdb_position))
-                    # For standard amminoacidic residues. Adds them to the primary sequence.
+                    # For standard amino acid residues. Adds them to the sequence.
                     else:
                         parsed_chain["residues"].append(pymod_residue.PyMod_standard_residue(three_letter_code=resname, one_letter_code=seq_manipulation.three2one(resname), db_index=pdb_position))
                         parsed_chain["has_standard_residues"] = True

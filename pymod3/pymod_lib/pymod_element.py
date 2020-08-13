@@ -82,11 +82,6 @@ class PyMod_element:
             self.pdb_id = can_be_fetched_results[0]
             self.pdb_chain = can_be_fetched_results[1]
 
-
-        # Sets the 'my_sequence' attribute. The primary sequence of an element. If the sequence is
-        # changed or aligned by the user, it will be modified to include indels.
-        # self.set_sequence(record_seq, adjust_sequence)
-
         #--------------------------------
         # Descriptions and annotations. -
         #--------------------------------
@@ -783,13 +778,6 @@ class _PyMod_sequence_element(PyMod_element):
         # Exlude cluster elements (alignments and BLAST-searches).
         if not self.is_cluster():
             r = True
-
-        # if self.has_structure():
-        #     r = False
-        # # The element is a primary sequence imported by the user.
-        # else:
-        #     r = True
-
         return r
 
     def is_suitable_template(self):
