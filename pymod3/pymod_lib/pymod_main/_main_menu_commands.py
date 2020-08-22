@@ -929,7 +929,7 @@ class PyMod_main_menu_commands:
 
 
     def open_online_documentation(self):
-        webbrowser.open("http://schubert.bio.uniroma1.it/pymod/documentation.html")
+        webbrowser.open("https://github.com/pymodproject/pymod#how-to-use-pymod")
 
 
     def launch_databases_update(self):
