@@ -28,12 +28,12 @@ from pymod_lib.pymod_protocols.base_protocols import PyMod_protocol, MODELLER_co
 from pymod_lib.pymod_protocols.structural_analysis_protocols.dope_assessment import DOPE_assessment, show_dope_plot, compute_dope_of_structure_file
 from pymod_lib.pymod_element_feature import Element_feature
 from pymod_lib.pymod_threading import Protocol_exec_dialog
-
 import pymod_lib.pymod_vars as pmdt
 import pymod_lib.pymod_os_specific as pmos
 import pymod_lib.pymod_seq.seq_manipulation as pmsm
 import pymod_lib.pymod_structure as pmstr
 from pymod_lib.pymod_protocols.modeling_protocols.homology_modeling._gui_qt import Modeling_window_qt
+from pymod_lib.pymod_gui.shared_gui_components_qt import askyesno_qt
 
 
 ###################################################################################################
@@ -555,6 +555,31 @@ class MODELLER_homology_modeling(PyMod_protocol, MODELLER_common):
                        " fully compatible with PyMod/PyMOL (see %s for more"
                        " information)." % fix_pythonpath_modeller_ref)
             self.pymod.main_window.show_warning_message("MODELLER warning", message)
+
+        # If on Windows, warns before using parallel MODELLER jobs.
+        if self.modeller_n_jobs > 1 and sys.platform == "win32":
+
+            message = ("You decided to use multiple parallel MODELLER jobs on a"
+                       " Windows machine. The use of parallel MODELLER jobs does"
+                       " not work on certain Windows machines (the modeling task"
+                       " could crash or freeze unexpectedly). Are you sure you"
+                       " want to use parallel jobs? You may try to do it, and if"
+                       " the task fails, you can attempt to run it again with"
+                       " only one job."
+                       " Note that even if your Windows machine can use parallel"
+                       " MODELLER jobs, this will trigger a message from Windows"
+                       " Defender (this is because PyMOL will spawn a separate"
+                       " child process for each parallel MODELLER job)."
+                       " However, you can safely suppress this Windows Defender"
+                       " message, in this way you will be able to use all the"
+                       " cores you want also on Windows.")
+            choice = askyesno_qt("Use parallel MODELLER jobs?", message,
+                                 parent=self.pymod.get_qt_parent())
+
+            if not choice:
+                raise ValueError("Please set in the 'Options' tab of the MODELLER"
+                                 " window the 'N. of Parallel Jobs' option to 1"
+                                 " in order to use only one MODELLER job.")
 
 
     def check_custom_optimization_level_parameters(self):
@@ -1450,14 +1475,14 @@ class MODELLER_homology_modeling(PyMod_protocol, MODELLER_common):
                     a.library_schedule = modeller.automodel.autosched.normal
                     a.max_var_iterations = 300
                     # Mid MD optimization:
-                    a.md_level = modeller.automodel.refine.fast
+                    a.md_level = modeller.automodel.refine.slow
                 #--------------------------------------------------------
 
                 # External ----------------------------------------------
                 if self.write_modeller_script_option:
                     self.mod_script_dict["refinement"] += "a.library_schedule = modeller.automodel.autosched.fast\n"
                     self.mod_script_dict["refinement"] += "a.max_var_iterations = 300\n"
-                    self.mod_script_dict["refinement"] += "a.md_level = modeller.automodel.refine.fast\n"
+                    self.mod_script_dict["refinement"] += "a.md_level = modeller.automodel.refine.slow\n"
                 #--------------------------------------------------------
 
             elif self.optimization_level == "High":

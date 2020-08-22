@@ -118,7 +118,13 @@ def global_pairwise_alignment(seq1, seq2, toss_modres=False):
 
     import Bio.pairwise2
 
-    ali = Bio.pairwise2.align.globalms(seq1, seq2, 2, -1, -.5, -.1)
+    # The original version was: globalms(seq1, seq2, 2, -1, -.5, -.1)
+    ali = Bio.pairwise2.align.globalms(seq1, seq2,
+                                       2,  # match score.
+                                       -2, # mismatch score.
+                                       -5, # gap opening.
+                                       -.5 # gap extension.
+                                       )
 
     aseq1 = ali[0][0]
     aseq2 = ali[0][1]

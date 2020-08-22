@@ -234,12 +234,13 @@ class Associate_structure(PyMod_protocol):
     temp_fragment_name = "pymod_fragment_temp"
     protocol_name = "associate_structure"
 
-    def __init__(self, pymod, pymod_element):
+    def __init__(self, pymod, pymod_element, permissive=True):
         PyMod_protocol.__init__(self, pymod, output_directory=pymod.temp_directory_dirpath)
         # Directory in which to save the temporary files.
         self.temp_directory = self.pymod.temp_directory_dirpath
         self.target_element = pymod_element
         self.associate_pdb_file = None
+        self.permissive = permissive
 
     def associate(self, pdb_file_path, chain_id):
         """
@@ -267,8 +268,9 @@ class Associate_structure(PyMod_protocol):
                                         toss_modres=True)
 
         # If the sequences do not match, interrupt the process.
-        # if ali["id"] < 99.9: # TODO: use a 'PyMod_alignment' class.
-        #     raise ValueError("The target sequence does not match with the sequence of the structure to associate (sequence identity percentage = %s)." % ali["id"])
+        if not self.permissive:
+            if ali["id"] < 99.9:
+                raise ValueError("The target sequence does not match with the sequence of the structure to associate (sequence identity percentage = %s)." % ali["id"])
 
         #-------------------------------------------------------------------------------------
         # Gets information about matching and missing residues in the two aligned sequences. -

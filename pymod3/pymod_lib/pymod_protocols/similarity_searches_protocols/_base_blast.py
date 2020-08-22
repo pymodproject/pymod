@@ -436,7 +436,7 @@ class Generic_BLAST_search(PyMod_protocol):
         Called when the 'SUBMIT' button is pressed on some BLAST results window.
         """
         # For each hsp takes the state of its check-box.
-        self.my_blast_map = [int(chk.isChecked()) for chk in self.blast_output_window.blast_sbjct_checkbuttons_list]
+        self.my_blast_map = [int(chk.isChecked()) for chk in self.blast_output_window.sbjct_checkbuttons_list]
 
         # If the user selected at least one HSP.
         if 1 in self.my_blast_map:
@@ -936,7 +936,7 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
         # similarity search program.
         self.blast_output_row = 1
 
-        self.blast_sbjct_checkbuttons_list = [] # List containing the checkbutton widgets.
+        self.sbjct_checkbuttons_list = [] # List containing the checkbutton widgets.
 
         for hsp in self.protocol.hsp_list:
 
@@ -944,7 +944,7 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
             subject_name = self.protocol.get_subject_name(hsp)
             hsp_checkbox = QtWidgets.QCheckBox(subject_name)
             hsp_checkbox.setStyleSheet(small_font_style)
-            self.blast_sbjct_checkbuttons_list.append(hsp_checkbox)
+            self.sbjct_checkbuttons_list.append(hsp_checkbox)
             self.results_grid.addWidget(hsp_checkbox, self.blast_output_row, 0)
 
             # E-value info.
@@ -981,12 +981,12 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
 
 
     def blast_select_all(self):
-        for chk in self.blast_sbjct_checkbuttons_list:
+        for chk in self.sbjct_checkbuttons_list:
             chk.setChecked(True)
 
 
     def blast_select_none(self):
-        for chk in self.blast_sbjct_checkbuttons_list:
+        for chk in self.sbjct_checkbuttons_list:
             chk.setChecked(False)
 
 
@@ -995,7 +995,7 @@ class Similarity_searches_results_window_qt(QtWidgets.QMainWindow):
             select_top = int(self.blast_select_n_enf.getvalue())
             self.blast_select_none()
             count = 0
-            for chk in self.blast_sbjct_checkbuttons_list:
+            for chk in self.sbjct_checkbuttons_list:
                 chk.setChecked(True)
                 count += 1
                 if count == select_top:

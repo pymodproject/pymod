@@ -4,6 +4,7 @@ This file contains descriptions of changes of new PyMod 3 releases.
 ## Version 3.0.2 (17/8/2020)
 - Added the possibility to import results from HH-suite output files (HHR and A3M).
 - Added compatibility for pyside2 (thanks to Thomas Holder).
+- Fixed the requirements for fully compatible PyMOL versions (see the README.md file).
 
 ## Version 3.0.1 (15/6/2020)
 - Fixed the PDB fetching functionality (updated to HTTPS urls on RCSB).

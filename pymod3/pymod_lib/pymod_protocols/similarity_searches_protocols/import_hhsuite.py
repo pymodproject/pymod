@@ -19,20 +19,19 @@ from Bio import SeqIO
 from pymol.Qt import QtWidgets, QtCore
 from pymol import cmd
 
-from pymod_lib.pymod_gui.shared_gui_components_qt import askopenfile_qt
 from pymod_lib.pymod_externals.hhsuite.hh_reader import read_result
 from pymod_lib.pymod_externals.hhsuite.hhmakemodel import to_seq
 from pymod_lib.pymod_externals.hhsuite.hhmakemodel import main as hhmakemodel_main
-
 from pymod_lib.pymod_gui.shared_gui_components_qt import (small_font_style, highlight_color,
                                                           PyMod_protocol_window_qt,
                                                           PyMod_hbox_option_qt,
-                                                          askyesno_qt)
+                                                          askyesno_qt, askopenfile_qt)
 from pymod_lib.pymod_protocols.similarity_searches_protocols._base_blast import (Generic_BLAST_search,
                                                                                  Similarity_searches_results_window_qt)
 from pymod_lib.pymod_threading import Protocol_exec_dialog
 from pymod_lib.pymod_exceptions import PyModInterruptedProtocol
 from pymod_lib.pymod_protocols.structural_databases_protocols import Associate_structure
+from pymod_lib.pymod_os_specific import check_network_connection
 
 
 ###############################################################################
@@ -132,15 +131,15 @@ class Import_HHsuite_results(Generic_BLAST_search):
         """
 
         # For each hsp takes the state of its check-box.
-        self.my_blast_map = [chk.isChecked() for chk in self.import_hhr_window.blast_sbjct_checkbuttons_list]
+        self.my_blast_map = [chk.isChecked() for chk in self.import_hhr_window.sbjct_checkbuttons_list]
+
+        self.import_hhr_window.destroy()
 
         # If the user selected at least one template.
         if any(self.my_blast_map):
 
-            # This will actually import the sequences inside Pymod.
+            # This will actually import the sequences inside PyMod.
             self.import_results_in_pymod()
-
-        self.import_hhr_window.destroy()
 
 
     def import_results_in_pymod(self):
@@ -148,6 +147,11 @@ class Import_HHsuite_results(Generic_BLAST_search):
         Builds a list containing those hits that were selected by the user in the BLAST results
         window.
         """
+
+        if not check_network_connection("https://google.com", timeout=3):
+            has_network = False
+        else:
+            has_network = True
 
         #------------------------------------------
         # Get the templates selected by the user. -
@@ -177,10 +181,17 @@ class Import_HHsuite_results(Generic_BLAST_search):
 
         if len(pdb_hsp_list) == len(self.imported_hsp_list):
 
-            message = ("Would you like to fetch from the Internet the PDB"
-                       " structures of the templates that you selected?")
-            fetch_cif_files = askyesno_qt("Fetch 3D structures?", message,
-                                          parent=self.pymod.get_qt_parent())
+            if has_network:
+                message = ("Would you like to fetch from the Internet the 3D"
+                           " structures of the templates that you selected?")
+                fetch_cif_files = askyesno_qt("Fetch 3D structures?", message,
+                                              parent=self.pymod.get_qt_parent())
+            else:
+                message = ("No network connection. The template 3D structures can"
+                           " not be fetched now from the Internet.")
+                self.pymod.main_window.show_warning_message(self.import_error_message,
+                                                            message)
+                fetch_cif_files = False
 
         elif len(pdb_hsp_list) == 0:
 
@@ -188,14 +199,15 @@ class Import_HHsuite_results(Generic_BLAST_search):
 
         else:
 
-            n_pdb_missing = len(self.imported_hsp_list)-len(pdb_hsp_list)
-            message = ("You selected {} (out of {}) hit sequences which do not appear"
-                       " to be valid templates from the PDB. No 3D structure"
-                       " will be fetched now. You can fetch the PDB structures"
-                       " of each hit sequence having a valid PDB id later at any"
-                       " moment".format(n_pdb_missing, len(self.imported_hsp_list)))
-            self.pymod.main_window.show_warning_message(self.import_error_message,
-                                                        message)
+            if has_network:
+                n_pdb_missing = len(self.imported_hsp_list)-len(pdb_hsp_list)
+                message = ("You selected {} (out of {}) hit sequences which do not appear"
+                           " to be valid templates from the PDB. No 3D structure"
+                           " will be fetched now. You can fetch the PDB structures"
+                           " of each hit sequence having a valid PDB id later at any"
+                           " moment".format(n_pdb_missing, len(self.imported_hsp_list)))
+                self.pymod.main_window.show_warning_message(self.import_error_message,
+                                                            message)
             fetch_cif_files = False
 
 
@@ -555,14 +567,14 @@ class HHsuite_import_hhr_window_qt(Similarity_searches_results_window_qt):
         # similarity search program.
         self.blast_output_row = 1
 
-        self.blast_sbjct_checkbuttons_list = [] # List containing the checkbutton widgets.
+        self.sbjct_checkbuttons_list = [] # List containing the checkbutton widgets.
 
         for hsp in self.protocol.hhr_results:
 
             # Hit name and checkbox.
             hsp_checkbox = QtWidgets.QCheckBox(self.protocol.get_subject_name(hsp))
             hsp_checkbox.setStyleSheet(small_font_style)
-            self.blast_sbjct_checkbuttons_list.append(hsp_checkbox)
+            self.sbjct_checkbuttons_list.append(hsp_checkbox)
             self.results_grid.addWidget(hsp_checkbox, self.blast_output_row, 0)
 
             # E-value info.

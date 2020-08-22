@@ -188,14 +188,14 @@ class PyMod_component_installer(InstallerQThread):
         It has to be overridden in subclasses.'''
         raise NotImplementedError
 
-    
+
     def unzip_downloaded_files(self, destination_dirpath,
                                explicit_list_of_files=None, in_thread=True):
         self._unzip_downloaded_files(destination_dirpath=destination_dirpath,
                                      explicit_list_of_files=explicit_list_of_files,
                                      in_thread=in_thread)
-        
-        
+
+
     def _unzip_downloaded_files(self, destination_dirpath,
                                 explicit_list_of_files=None, in_thread=True):
         # Shutil is the best choice here, bc calling tarfile or zipfile separately for each format is
@@ -228,8 +228,7 @@ class PyMod_component_installer(InstallerQThread):
             # segmentation fault. They will be upacked later in the main thread.
             if in_thread and element.endswith(".tar.gz"):
                 continue
-            
-            print("@ UNZIPPING M4a", element)
+
             shutil.unpack_archive(element, destination_dirpath)
             os.remove(element)     # cleaning compressed files
             self.downloaded_filepath_list.remove(element)

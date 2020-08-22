@@ -80,7 +80,6 @@ class PyMod_installer:
                            " packages. Please use an internet connection if you want to perform"
                            " the automatic installation.")
                 self.main_window.show_error_message("Installation Error", message)
-                has_network = False
         else:
             has_network = True
 
