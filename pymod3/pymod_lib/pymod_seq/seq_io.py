@@ -12,7 +12,7 @@ import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import SingleLetterAlphabet
+
 
 from pymod_lib import pymod_vars
 from pymod_lib.pymod_seq import seq_manipulation
@@ -112,7 +112,7 @@ def convert_sequence_file_format(input_filepath, input_format, output_format, ou
         records = [SeqRecord(Seq(l.split(" ")[1].rstrip("\n\r")), id=l.split(" ")[0]) for l in input_file_handler.readlines()]
     else:
         input_file_handler = open(input_filepath, "r")
-        records = list(SeqIO.parse(input_file_handler, input_format, alphabet=SingleLetterAlphabet()))
+        records = list(SeqIO.parse(input_file_handler, input_format))
 
 
     if output_format == "pymod":
