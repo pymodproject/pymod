@@ -389,7 +389,12 @@ def check_network_connection(remote_address, timeout=None):
             response = urllib.request.urlopen(remote_address, timeout=timeout)
         return True
     except urllib.error.URLError:
-        return False
+        #as a last resort in countries where Google is banned...
+        try:
+            response = urllib.request.urlopen("https://www.ncbi.nlm.nih.gov", timeout=5)
+            return True
+        except:
+            return False
 
 
 #####################################################################
