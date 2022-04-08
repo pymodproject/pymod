@@ -1,0 +1,13 @@
+PyMod 3 can be installed in PyMOL just like other PyMOL plugins (see:
+https://pymolwiki.org/index.php/Plugins). The 'pymod3' directory in this
+repository contains the PyMod plugin files. In order for PyMOL to recognize it
+as a plugin, this directory must be put in one of the plugin directories of
+PyMOL. If the 'pymod3' directory is archived in a ZIP file, the PyMOL plugin
+manager window can easily be used to install it as a plugin (it will automatically
+put the 'pymod3' directory in some PyMOL plugin folder).
+
+In this repository we provide a ready-to-use PyMod 3 plugin file with the latest
+PyMod version (see the "Download" section in the 'README.md' file). It is just a
+ZIP file containing the 'pymod3' directory of this repository. If you want to
+obtain your own version of a PyMod 3 plugin file, download this repository and
+use the 'build_pymol_plugin.py' script to build a plugin ZIP file.
