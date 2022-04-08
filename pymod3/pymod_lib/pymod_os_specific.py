@@ -391,7 +391,7 @@ def check_network_connection(remote_address, timeout=None):
     except urllib.error.URLError:
         #as a last resort in countries where Google is banned...
         try:
-            response = urllib.request.urlopen("https://www.ncbi.nlm.nih.gov", timeout=5)
+            response = urllib.request.urlopen("https://www.baidu.com/", timeout=5)
             return True
         except:
             return False
