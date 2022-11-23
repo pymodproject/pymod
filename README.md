@@ -19,7 +19,7 @@ Home page (to be updated soon): http://schubert.bio.uniroma1.it/pymod/index.html
 
 Old PyMod 2 packages (obsolete, they only work on PyMOL 1.X): if necessary [available from here](https://github.com/pymodproject/pymod/releases/tag/v2.0 "Legacy PyMod 2.0 installers")
 
-Contact: giacomo.janson@uniroma1.it
+Contact: serena.rosignoli@uniroma1.it, alessandro.paiardini@uniroma1.it
 
 ## Licence
 PyMod 3 is licensed under the LGPL.
