@@ -9,13 +9,16 @@ Module implementing functions to merge alignments and simplified center star ali
 
 import re
 
+from pymod_lib.pymod_vars import dict_of_matrices
+
 import Bio.pairwise2
-from Bio.SubsMat import MatrixInfo as matlist
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-matrix = matlist.blosum62.copy()
+# matrix = matlist.blosum62.copy()
+
+matrix = dict_of_matrices["BLOSUM62"]
 matrix.update({("X", "X"): 5})
 [matrix.update({("-", i): -10}) for i in "QWERTYIPASDFGHKLXCVNM"]
 [matrix.update({(i, "-"): -10}) for i in "QWERTYIPASDFGHKLXCVNM"]
