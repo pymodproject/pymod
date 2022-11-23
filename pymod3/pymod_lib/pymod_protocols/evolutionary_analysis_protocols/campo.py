@@ -6,9 +6,10 @@
 import os
 
 from Bio import SeqIO
-from Bio.SubsMat import MatrixInfo
+
 import numpy as np
 
+from pymod_lib.pymod_vars import dict_of_matrices
 from pymod_lib.pymod_seq import seq_manipulation
 from pymod_lib.pymod_protocols.evolutionary_analysis_protocols._evolutionary_analysis_base import Evolutionary_analysis_protocol
 from pymod_lib import pymod_vars
@@ -118,25 +119,25 @@ class CAMPO:
 
         if not same_length:
             raise Exception("The aligned sequences do not have the same length.")
-
+            
         # Prepares the substitution matrix.
         self.mutational_matrix = None
         if mutational_matrix == "blosum62":
-            self.mutational_matrix = MatrixInfo.blosum62
+            self.mutational_matrix = dict_of_matrices["BLOSUM62"]
         elif mutational_matrix == "blosum90":
-            self.mutational_matrix = MatrixInfo.blosum90
+            self.mutational_matrix = dict_of_matrices["BLOSUM90"]
         elif mutational_matrix == "blosum80":
-            self.mutational_matrix = MatrixInfo.blosum80
+            self.mutational_matrix = dict_of_matrices["BLOSUM80"]
         elif mutational_matrix == "blosum50":
-            self.mutational_matrix = MatrixInfo.blosum50
+            self.mutational_matrix = dict_of_matrices["BLOSUM50"]
         elif mutational_matrix == "blosum45":
-            self.mutational_matrix = MatrixInfo.blosum45
+            self.mutational_matrix = dict_of_matrices["BLOSUM45"]
         elif mutational_matrix == "pam250":
-            self.mutational_matrix = MatrixInfo.pam250
+            self.mutational_matrix = dict_of_matrices["PAM250"]
         elif mutational_matrix == "pam120":
-            self.mutational_matrix = MatrixInfo.pam120
+            self.mutational_matrix = dict_of_matrices["PAM120"]
         elif mutational_matrix == "pam30":
-            self.mutational_matrix = MatrixInfo.pam30
+            self.mutational_matrix = dict_of_matrices["PAM30"]
 
         self.mutational_matrix = self.mutational_matrix.copy()
 
