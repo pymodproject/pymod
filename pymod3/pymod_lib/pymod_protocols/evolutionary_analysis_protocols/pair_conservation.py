@@ -12,7 +12,7 @@ sequence alignment and the rest of the sequences in that alignment.
 import os
 import math
 
-from Bio.SubsMat import MatrixInfo
+from pymod_lib.pymod_vars import dict_of_matrices
 
 from pymod_lib.pymod_gui.shared_gui_components_qt import (PyMod_protocol_window_qt,
                                                           PyMod_radioselect_qt, PyMod_combobox_qt)
@@ -88,7 +88,8 @@ class Pair_conservation_analysis(Evolutionary_analysis_protocol):
 
         # Prepare the scoring matrix.
         if self.conservation_mode == "blosum62":
-            sub_matrix = MatrixInfo.blosum62.copy()
+            #sub_matrix = MatrixInfo.blosum62.copy()
+            sub_matrix = dict_of_matrices["BLOSUM62"]
             for pair in list(sub_matrix.keys()):
                 value = sub_matrix[pair]
                 sub_matrix.update({(pair[1], pair[0]): value})
