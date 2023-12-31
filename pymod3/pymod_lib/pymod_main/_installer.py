@@ -19,6 +19,8 @@ import json
 import importlib
 import time
 
+from pymol import cmd
+
 from pymol.Qt import QtCore, QtWidgets
 
 from pymod_lib.pymod_os_specific import (get_python_architecture, get_os_architecture, get_formatted_date,
@@ -27,7 +29,7 @@ from pymod_lib.pymod_os_specific import (get_python_architecture, get_os_archite
 from pymod_lib.pymod_vars import (blast_databases_dirname, hmmer_databases_dirname, hmmscan_databases_dirname,
                                   data_installer_log_filename)
 from pymod_lib.pymod_gui.shared_gui_components_qt import askyesno_qt, askopenfile_qt
-
+import warnings
 
 # Installer parameters.
 tools_installer_log_filename = "pymod_installer_log.txt"
@@ -139,8 +141,20 @@ class PyMod_installer:
             if modeller_spec is None:
                 modeller_status = "missing"
             # License key is probably invalid.
-            else:
-                modeller_status = "broken"
+            else: 
+                try:
+                    import modeller
+                except ImportError as e:
+                    error = e
+                    print(f"Error importing some_library: {e}")
+                except Exception as e:
+                    error = e
+                    print(f"An unexpected error occurred: {e}")
+            
+                if "DLL load failed" in str(error) or "dll" in str(error):
+                    modeller_status = "broken-modeller"
+                else:
+                    modeller_status = "broken"
 
         # Show the installation options dialog.
         install_options_dialog = Installation_options_dialog(pymod=self,
@@ -183,6 +197,11 @@ class PyMod_installer:
 
             # Show the MODELLER installation download dialog.
             if modeller_status == "missing":
+                install_dialog = Install_MODELLER_dialog(pymod=self)
+                install_dialog.setModal(True)
+                install_dialog.exec_()
+
+            elif modeller_status == "broken-modeller":
                 install_dialog = Install_MODELLER_dialog(pymod=self)
                 install_dialog.setModal(True)
                 install_dialog.exec_()
@@ -319,6 +338,9 @@ class Installation_options_dialog(Installer_dialog_mixin, QtWidgets.QDialog):
                     elif self.modeller_status == "broken":
                         install_modeller_label = fix_modeller_label
                         install_modeller_cb_status = True
+                    elif self.modeller_status == "broken-modeller":
+                        install_modeller_label = "MODELLER (through Conda)"
+                        install_modeller_cb_status = True                        
                     else:
                         install_modeller_label = unknown_modeller_status_label
                         install_modeller_cb_status = False
@@ -1004,10 +1026,17 @@ def perform_modeller_installation(modeller_key,
         # Uses the conda python module.
         import conda.cli.python_api as conda_api
 
-        # Gets environment information from conda.
+        # Gets environment information.
         info_results = conda_api.run_command(conda_api.Commands.INFO, "--json")
         conda_info_dict = json.loads(info_results[0])
-
+        
+        # NOTE: installing modeller on the default PyMOL environment sometimes causes
+        # problems in PyMOL < 2.5.7, therefore it is safer to install it in a PyMod "pseudo" conda
+        # environment.        
+        pymol_version_for_modeller = tuple(map(int, cmd.get_version()[0].split('.')[:3]))
+        minimum_pymol_version = (2, 5, 5)
+        install_modeller_in_root_conda_env = False
+        
         # Adds the salilab channel. This should write a .condarc file in the user's home.
         print("- Adding 'salilab' to the conda channels.")
         conda_api.run_command(conda_api.Commands.CONFIG, "--add", "channels", "salilab")
@@ -1016,20 +1045,40 @@ def perform_modeller_installation(modeller_key,
         if uninstall:
             stdout = conda_api.run_command(conda_api.Commands.REMOVE, "modeller")
 
+        # Checks if we are in windows:
+        if os.name == 'nt':
+        
+            # Checks if the conda root has write permissions.
+            if "root_writable" in conda_info_dict:
+                root_writable = conda_info_dict["root_writable"]
+            else:
+                root_writable = False
+                
+            # Checks if the user has Admin privileges.   
+            if "is_windows_admin" in conda_info_dict:
+                is_windows_admin = conda_info_dict["is_windows_admin"]
+            else:
+                is_windows_admin = False
+                
+            # Checks if PyMOL version is > 2.5.5. In this case, Modeller will be installed on the default PyMOL environment
+            if pymol_version_for_modeller > minimum_pymol_version:
+                print("Your PyMOL version is %s, modeller will be installed in root PyMOL conda env" % str(cmd.get_version()[0]))
+                install_modeller_in_root_conda_env = True
+            else:
+                print("Your PyMOL version is %s, modeller will be installed in a new conda env" % str(cmd.get_version()[0]))
+                install_modeller_in_root_conda_env = False
+                
+        # if we are in other OS, modeller will be installed in new conda env anyway:                
+        else:
+            install_modeller_in_root_conda_env = False 
 
-        # Checks if the conda root has write permissions.
-        # if "root_writable" in conda_info_dict:
-        #     root_writable = conda_info_dict["root_writable"]
-        # else:
-        #     root_writable = True
-
-        # NOTE: installing modeller on the default PyMOL environment sometimes causes
-        # problems, therefore it is safer to install it in a PyMod "pseudo" conda
-        # environment.
-        root_writable = False
+        # Sets an environmental variable which will be used by conda to edit the MODELLER
+        # configuration file.
+        print("- Setting the MODELLER key as an environmental variable.")
+        os.environ["KEY_MODELLER"] = modeller_key
 
         # Edit the condarc file and builds a new conda environment for PyMod.
-        if not root_writable:
+        if not install_modeller_in_root_conda_env:
 
             # Add an environment directory.
             print("- Adding a writable envs directory.")
@@ -1047,27 +1096,40 @@ def perform_modeller_installation(modeller_key,
 
             # Creates a new environment. Use the same Python version of the Python
             # used in PyMOL.
-            print("- Creating a new conda environment for PyMod modules.")
-            conda_api.run_command(conda_api.Commands.CREATE, "-p", pymod_env_dirpath,
-                                  "--no-default-packages", "python=%s" % python_minor_version)
-
-
-        # Sets an environmental variable which will be used by conda to edit the MODELLER
-        # configuration file.
-        print("- Setting the MODELLER key as an environmental variable.")
-        os.environ["KEY_MODELLER"] = modeller_key
+            print("- Creating a new python %s conda environment for PyMod modules -" % python_minor_version)
+            conda_api.run_command(conda_api.Commands.CREATE, "-p", pymod_env_dirpath, "--no-default-packages", "python=%s" % python_minor_version)
 
         # Installs the MODELLER package.
-        print("- Installing the 'modeller' conda package.")
-        if not root_writable:
-            stdout = conda_api.run_command(conda_api.Commands.INSTALL, "-p", pymod_env_dirpath, "modeller")
+        
+        # Checks if windows:
+        if os.name == 'nt':
+            if install_modeller_in_root_conda_env:
+                if not root_writable and not is_windows_admin:
+                    # message 
+                    print("You must run PyMOL as Administrator in order to install Modeller!")
+                    return {"successful": False, "error": "You must run PyMOL as Administrator in order to install Modeller!\n \
+                    Please right-click the PyMOL icon and select 'Run as Administrator'"}
+                else:
+                    print("- Installing the 'modeller' conda package in root conda env")
+                    stdout = conda_api.run_command(conda_api.Commands.INSTALL, "modeller")
+            else:
+                print("- Installing the 'modeller' conda package in a new conda env %s" % str(pymod_env_dirpath))
+                stdout = conda_api.run_command(conda_api.Commands.INSTALL, "-p", pymod_env_dirpath, "modeller")
+                
+        # other OS:        
         else:
-            stdout = conda_api.run_command(conda_api.Commands.INSTALL, "modeller")
+            if not install_modeller_in_root_conda_env:
+                print("- Installing the 'modeller' conda package in a new conda env %s" % str(pymod_env_dirpath))
+                stdout = conda_api.run_command(conda_api.Commands.INSTALL, "-p", pymod_env_dirpath, "modeller")
+            else:    
+                print("- Installing the 'modeller' conda package in root conda env")
+                stdout = conda_api.run_command(conda_api.Commands.INSTALL, "modeller")
+        
         print("- The 'modeller' package was successfully installed.")
 
 
         # Removes the temporary directories from the .condarc file.
-        if not root_writable:
+        if not install_modeller_in_root_conda_env:
             conda_api.run_command(conda_api.Commands.CONFIG, "--remove", "envs_dirs", pymod_envs_dirpath)
             conda_api.run_command(conda_api.Commands.CONFIG, "--remove", "pkgs_dirs", pymod_pkgs_dirpath)
 
