@@ -3,7 +3,7 @@ PyMod 3 is an open source [PyMOL](https://github.com/schrodinger/pymol-open-sour
 
 ## Requirements
 PyMod 3 has been tested and runs on Windows, macOS and Linux versions of PyMOL. It is compatible with incentive PyMOL builds distributed by [Schrodinger](https://pymol.org/2/ "Schrodinger website") (required PyMOL version >= 2.3.4) and open source builds (required PyMOL version >= 2.3.0).
-Warning: the compatibility of PyMod 3 with PyMOL 3 still needs to be tested.
+The compatibility of PyMod 3 with PyMOL 3 still needs to be tested.
 
 ## Download
 PyMod 3 plugin file (current version 3.0.2): [download from here](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod3.zip "PyMod 3 plugin file for PyMOL")
