@@ -350,9 +350,9 @@ class Ramachandran_plot_triangle(QtWidgets.QGraphicsPolygonItem, Ramachandran_pl
         # Build the polygon object representing a triangle.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            polygon = QtGui.QPolygonF([QtCore.QPoint(i, j-2*mark_size),
-                                       QtCore.QPoint(i-1.7*mark_size, j+mark_size),
-                                       QtCore.QPoint(i+1.7*mark_size, j+mark_size)])
+            polygon = QtGui.QPolygonF([QtCore.QPointF(i, j-2*mark_size),
+                                       QtCore.QPointF(i-1.7*mark_size, j+mark_size),
+                                       QtCore.QPointF(i+1.7*mark_size, j+mark_size)])
         # Initialize.
         super(Ramachandran_plot_triangle, self).__init__(polygon)
         self.common_initialization(i, j, tags, parent_window, pen, brush)
