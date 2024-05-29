@@ -63,7 +63,7 @@ class TableView(QtWidgets.QTableWidget):
                     _value = "-"
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    newitem = QtWidgets.QTableWidgetItem(_value)
+                    newitem = QtWidgets.QTableWidgetItem(str(_value))
                 newitem.setData(QtCore.Qt.DisplayRole, _value)
                 newitem.setFlags(QtCore.Qt.ItemIsEnabled)
                 newitem.setTextAlignment(QtCore.Qt.AlignCenter)
