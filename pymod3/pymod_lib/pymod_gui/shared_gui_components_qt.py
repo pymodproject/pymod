@@ -907,12 +907,12 @@ class PyMod_scalebar_qt(PyMod_form_item):
         self.slider_use_float = slider_use_float
         self.slider_use_float_val = slider_use_float_val
         self.slider.slider_resoution = slider_resoution
-        self.slider.setMinimum(self._get_slider_val(slider_from, internal=True))
-        self.slider.setMaximum(self._get_slider_val(slider_to, internal=True))
-        self.slider.setValue(self._get_slider_val(slider_value, internal=True))
-        self.slider.setTickInterval(self._get_slider_val(slider_tickinterval, internal=True))
-        self.slider.setSingleStep(self._get_slider_val(slider_resoution, internal=True))
-        self.slider.setPageStep(self._get_slider_val(slider_tickinterval, internal=True))
+        self.slider.setMinimum(round(self._get_slider_val(slider_from, internal=True)))
+        self.slider.setMaximum(round(self._get_slider_val(slider_to, internal=True)))
+        self.slider.setValue(round(self._get_slider_val(slider_value, internal=True)))
+        self.slider.setTickInterval(round(self._get_slider_val(slider_tickinterval, internal=True)))
+        self.slider.setSingleStep(round(self._get_slider_val(slider_resoution, internal=True)))
+        self.slider.setPageStep(round(self._get_slider_val(slider_tickinterval, internal=True)))
 
         self.slider.valueChanged.connect(self._on_slider_change)
         self.slider.sliderPressed.connect(self._on_slider_pressed)
