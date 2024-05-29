@@ -663,7 +663,7 @@ class Contact_map_analysis_window_qt(QtWidgets.QMainWindow):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             for c in viridis_colors_rev:
-                brush = QtGui.QBrush(QtGui.QColor(c[0]*255, c[1]*255, c[2]*255))
+                brush = QtGui.QBrush(QtGui.QColor(round(c[0]*255), round(c[1]*255), round(c[2]*255)))
                 self.viridis_brushes.append(brush)
         self.default_brush = QtGui.QBrush(QtGui.QColor(242, 242, 242))
         self.highlight_brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
