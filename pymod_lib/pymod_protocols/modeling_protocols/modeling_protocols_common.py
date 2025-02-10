@@ -291,6 +291,7 @@ class Associate_structure(PyMod_protocol):
         self._set_options(model_file_path, model_chain)
 
         models_subdir = (os.path.basename(os.path.normpath(model_file_path))).replace(".pdb", "")
+        
         self.af_session_dirpath = os.path.join(self.pymod.models_dirpath, models_subdir + "-session")
 
         # ##### MODIFIED #####
