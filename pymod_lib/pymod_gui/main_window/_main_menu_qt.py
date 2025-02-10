@@ -435,7 +435,7 @@ class PyMod_main_window_main_menu:
         else:
             add_qt_menu_command(self.modeller_submenu_models, "There aren't any models")
 
-        ##########################MODIFIED BY SARA (modification number2)########################################
+        ##########################MODIFIED on 09/02/2025########################################
         if self.pymod.af_modeling_session_list:
             for af_session, models in self.pymod.af_modeling_session_list.items():
                 if models:

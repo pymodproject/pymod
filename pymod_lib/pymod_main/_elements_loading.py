@@ -129,25 +129,26 @@ class PyMod_elements_loading:
         if not self.is_valid_structure_file(pdb_file_full_path, file_format):
             raise PyModInvalidFile("Can not open an invalid '%s' file." % file_format)
         
-        ###################MODIFICHE SARA###########################################
-        #Rinomina il file PDB sostituendo i '-' con '_'
-        pdb_dir = os.path.dirname(pdb_file_full_path)  # Ottiene la directory del file PDB
-        pdb_filename = os.path.basename(pdb_file_full_path)  # Ottiene il Nome del file PDB
-        new_pdb_filename = pdb_filename.replace("-", "_")  # Sostituisci i trattini con underscore nel nome del file
-        new_pdb_file_full_path = os.path.join(pdb_dir, new_pdb_filename)  #  Costruisce Nuovo percorso completo del file 
+        ###################MODIFIED on 09/02/2025###########################################
+        
+        # Rename the PDB file by replacing '-' with '_'
+        pdb_dir = os.path.dirname(pdb_file_full_path)  # Gets the directory of the PDB file
+        pdb_filename = os.path.basename(pdb_file_full_path)  # Gets the name of the PDB file
+        new_pdb_filename = pdb_filename.replace("-", "_")  # Replaces hyphens with underscores in the file name
+        new_pdb_file_full_path = os.path.join(pdb_dir, new_pdb_filename)  # Constructs the new full file path
 
-        # Rinomina il file sul filesystem se il nome è cambiato
+
+        # Rename the file on the filesystem if the name has changed
         if new_pdb_file_full_path != pdb_file_full_path:
             try:
                 os.rename(pdb_file_full_path, new_pdb_file_full_path)
-                pdb_file_full_path = new_pdb_file_full_path  # Usa il nuovo percorso
-            #Se la rinomina fallisce, viene gestito l'errore e viene sollevata un'eccezione.
+                pdb_file_full_path = new_pdb_file_full_path  # Use the new path
+            # If renaming fails, handle the error and raise an exception.
             except OSError as e:
                 print(f"Error renaming file: {e}")
                 raise
             
-        
-        #prosegue con caricamento del file 
+        # Proceed with loading the file
         p = pymod_structure.Parsed_pdb_file(self, pdb_file_full_path, output_directory=self.structures_dirpath)
         elements_to_return = []
         for element in p.get_pymod_elements():
