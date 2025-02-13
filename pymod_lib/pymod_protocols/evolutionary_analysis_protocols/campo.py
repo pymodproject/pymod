@@ -4,10 +4,12 @@
 # or the main __init__.py file in the pymod3 folder.
 
 import os
-
+import pandas as pd
 from Bio import SeqIO
 
 import numpy as np
+
+import csv
 
 from pymod_lib.pymod_vars import dict_of_matrices
 from pymod_lib.pymod_seq import seq_manipulation
@@ -34,6 +36,13 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
         """
         Builds a window with options for the CAMPO algorithm.
         """
+        
+        aligned_sequences = self.input_cluster_element.get_children()
+        print(type(aligned_sequences))
+        self.aligned_sequences_headers = [seq.my_header for seq in aligned_sequences]
+        self.aligned_sequences_headers.append("All")
+        
+
         self.campo_window = CAMPO_options_window_qt(self.pymod.main_window,
             protocol=self,
             title="CAMPO algorithm options",
@@ -70,6 +79,7 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
             # Assigns CAMPO scores to each one of the aligned sequences.
             for seq in aligned_sequences:
                 residues = seq.get_polymer_residues()
+
                 rc = 0
                 for (r,v) in zip(seq.my_sequence, campo_list):
                     if r != "-":
@@ -82,11 +92,72 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
             self.pymod.main_window.show_error_message("CAMPO Error",
                 "Could not compute CAMPO scores because of the following error: '%s'.)" % e)
 
+        #############################MODIFIED on 12/02/2025#################################
+        ########################DOWNLOADING CSV file from the option all in campo#######################
 
-        # Removes the temporary alignment file.
-        os.remove(input_file_shortcut)
-        self.campo_window.destroy()
+        # Function to fix the incorrect CSV format
+        def right_format_csv(table_campo):
+            
+            df = pd.read_csv(table_campo)
+            
+            for col in df.columns[1:]:
+                counter = 1  # Amino acid numbering
+                for i in range(len(df)):
+                  
+                    if isinstance(df[col][i], str) and "," in df[col][i]:
+                        aa, score = df[col][i].split(",")  # Split AA and score
+                        score = float(score)
 
+                        # Handle the special case of a dash ('-') in the alignment
+                        if aa == "-":
+                            df.at[i, col] = "-"  # Keep the dash, remove the score
+                        else:
+                            df.at[i, col] = f"{aa}-{counter},{score}" 
+                            counter += 1  
+
+            # Overwrite the CSV file with the corrected format
+            df.to_csv(campo_txt_path, index=False)
+
+
+        # Get aligned sequences
+        aligned_sequences = self.input_cluster_element.get_children()
+
+        sequence_dict = {}
+
+        headers = ["Position"]
+
+        for seq in aligned_sequences:
+            seq_name = seq.my_header
+            seq_sequence = seq.my_sequence
+            sequence_dict[seq_name] = seq_sequence
+            headers.append(seq_name)
+
+        max_len = max(len(seq) for seq in sequence_dict.values())
+
+        table = []
+        for i in range(max_len):
+            row = [f"AA{i+1},score"]  # AA position starts from 1
+            for seq_id in sequence_dict:
+                seq = sequence_dict[seq_id]
+                if i < len(seq):
+                    aa = seq[i]  # Get the amino acid
+                    score = campo_list[i]['campo-score'] if i < len(campo_list) else ""  # Get the score if available
+                    row.append(f"{aa},{score}")  # Add AA and score
+                else:
+                    row.append("")  # Leave empty if sequence is shorter
+            table.append(row)
+
+        # Write the original CSV file when the user chooses option all 
+        campo_txt_path = os.path.join(self.pymod.alignments_dirpath, "alignment_table_campo_all.csv")
+        with open(campo_txt_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+            writer.writerows(table)
+
+        # Call the formatting function after writing the file
+        right_format_csv(campo_txt_path)
+
+        
 
 class CAMPO:
     """
@@ -121,7 +192,6 @@ class CAMPO:
             raise Exception("The aligned sequences do not have the same length.")
 
         # Prepares the substitution matrix.
-        # Prepares the substitution matrix.
         self.mutational_matrix = None
         if mutational_matrix == "blosum62":
             self.mutational_matrix = dict_of_matrices["BLOSUM62"]
@@ -139,6 +209,7 @@ class CAMPO:
             self.mutational_matrix = dict_of_matrices["PAM120"]
         elif mutational_matrix == "pam30":
             self.mutational_matrix = dict_of_matrices["PAM30"]
+
         self.mutational_matrix = self.mutational_matrix.copy()
 
         # Completes the "other half" of the Biopython matrix.
@@ -368,7 +439,20 @@ class CAMPO_options_window_qt(PyMod_protocol_window_qt):
         self.campo_exclude_gaps_rds.setvalue("Yes")
         self.middle_formlayout.add_widget_to_align(self.campo_exclude_gaps_rds)
 
+        
+        ##########################MODIFIED on 12/09/2025#################################
+        # Scoring matrix combobox.
+        # Create a combobox for downloading CAMPO results as a CSV file
+        self.save_file_cbx = PyMod_combobox_qt(label_text="Download CAMPO results as CSV?",
+                                                #items=["No", "Yes"]
+                                                items=self.protocol.aligned_sequences_headers)
+
+        self.save_file_cbx.combobox.setCurrentIndex(0)
+        self.middle_formlayout.add_widget_to_align(self.save_file_cbx)
+
         self.middle_formlayout.set_input_widgets_width("auto", padding=10)
+        
+        
 
 
     def validate_input(self):
@@ -380,6 +464,8 @@ class CAMPO_options_window_qt(PyMod_protocol_window_qt):
             params_from_gui["gap_score"] = self.campo_gap_penalty_enf.getvalue(validate=True)
             params_from_gui["gap_gap_score"] = self.campo_gap_to_gap_score_enf.getvalue(validate=True)
             params_from_gui["toss_gaps"] = pymod_vars.yesno_dict[self.campo_exclude_gaps_rds.getvalue()]
+    
+        
         except (ValueError, KeyError) as e:
             return None, str(e)
 

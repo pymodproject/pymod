@@ -8,7 +8,8 @@ import os
 from Bio import SeqIO
 
 import numpy as np
-
+###MODIFIED#############
+import csv
 from pymod_lib.pymod_vars import dict_of_matrices
 from pymod_lib.pymod_seq import seq_manipulation
 from pymod_lib.pymod_protocols.evolutionary_analysis_protocols._evolutionary_analysis_base import Evolutionary_analysis_protocol
@@ -82,6 +83,41 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
             self.pymod.main_window.show_error_message("CAMPO Error",
                 "Could not compute CAMPO scores because of the following error: '%s'.)" % e)
 
+        #########################MODIFICATION CAMPO SCORE SAVED to csv 10/02/2025 (by ELISA)#############################
+
+        try:
+            # Save a csv file with campo scores of the first element of the cluster
+            if self.campo_window.save_file_cbx.get() == "All":
+                for seq in aligned_sequences:
+                    campo_txt_path = os.path.join(self.pymod.alignments_dirpath, seq.my_header + "_campo.csv")
+                    print(f"Saving file to: {campo_txt_path}")  # Debug: stampa il percorso
+                    with open(campo_txt_path, 'w') as fileObj:
+                        writerObj = csv.writer(fileObj)
+                        residues = seq.get_polymer_residues()
+                        rc = 0
+                        for (r,v) in zip(seq.my_sequence, campo_list):
+                            if r != "-":
+                                tmp_list = [r, seq.get_residue_by_index(rc).db_index, v['campo-score']]
+                                writerObj.writerow(tmp_list)
+                                rc += 1
+            else:
+                for seq in aligned_sequences:
+                    if seq.my_header == self.campo_window.save_file_cbx.get():
+                        campo_txt_path = os.path.join(self.pymod.alignments_dirpath, seq.my_header + "_campo.csv")
+                        print(f"Saving file to: {campo_txt_path}")  # Debug: stampa il percorso
+                        with open(campo_txt_path, 'w') as fileObj:
+                            writerObj = csv.writer(fileObj)
+                            residues = seq.get_polymer_residues()
+                            rc = 0
+                            for (r,v) in zip(seq.my_sequence, campo_list):
+                                if r != "-":
+                                    tmp_list = [r, seq.get_residue_by_index(rc).db_index, v['campo-score']]
+                                    writerObj.writerow(tmp_list)
+                                    rc += 1
+
+        except Exception as e:
+            self.pymod.main_window.show_error_message("CAMPO Error",
+                "Could not save CAMPO scores to file because of the following error: '%s'.)" % e)
 
         # Removes the temporary alignment file.
         os.remove(input_file_shortcut)
