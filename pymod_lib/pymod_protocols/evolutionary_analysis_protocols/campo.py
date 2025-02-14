@@ -10,6 +10,8 @@ from Bio import SeqIO
 import numpy as np
 
 import csv
+import warnings
+
 
 from pymod_lib.pymod_vars import dict_of_matrices
 from pymod_lib.pymod_seq import seq_manipulation
@@ -110,22 +112,28 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
 
                         # Handle the special case of a dash ('-') in the alignment
                         if aa == "-":
-                            df.at[i, col] = "-"  # Keep the dash, remove the score
+                            df.at[i, col] = "-"  #Keep the dash, remove the score
                         else:
-                            df.at[i, col] = f"{aa}-{counter},{score}" 
+                            df.at[i, col] = f"{aa}-{counter},{score}" #Stores a formatted string "aa-counter,score" in the (i, col) cell of `df`.
                             counter += 1  
 
-            # Overwrite the CSV file with the corrected format
-            df.to_csv(campo_txt_path, index=False)
+            #Overwrite the CSV file with the corrected format
+            try:
+                df.to_csv(campo_txt_path, index=False)
+            #####################MODIFIED on 14/02/2025#######################################
+            #warnings if the file doens't exist or no permissions to write it or other error
+            except FileNotFoundError:
+                warnings.warn(f"File not found: {campo_txt_path}. The file may have been moved or deleted.", RuntimeWarning)
+            except PermissionError:
+                warnings.warn(f"Permission denied: Cannot write to {campo_txt_path}. Check file permissions.", RuntimeWarning)
+            except Exception as e:
+                warnings.warn(f"An unexpected error occurred while writing to {campo_txt_path}: {e}", RuntimeWarning)
 
 
-        # Get aligned sequences
+        # Get aligned sequences to prepare the table 
         aligned_sequences = self.input_cluster_element.get_children()
-
         sequence_dict = {}
-
         headers = ["Position"]
-
         for seq in aligned_sequences:
             seq_name = seq.my_header
             seq_sequence = seq.my_sequence
@@ -135,6 +143,7 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
         max_len = max(len(seq) for seq in sequence_dict.values())
 
         table = []
+        #populating the table 
         for i in range(max_len):
             row = [f"AA{i+1},score"]  # AA position starts from 1
             for seq_id in sequence_dict:
