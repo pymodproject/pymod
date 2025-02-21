@@ -31,9 +31,17 @@ class Ramachandran_plot(PyMod_protocol):
             self.pymod.main_window.show_error_message("Selection Error", "Please select one structure to display its Ramachandran Plot.")
             return None
 
+        ####################MODIFIED on 18/02/2025###################
+        # Check if any selected target sequence is a nucleic acid (DNA/RNA).
+        # If so, display an error message and prevent the generation of a Ramachandran plot.
+        if any(e.polymer_type in ["dna", "rna"] for e in self.target_sequences):
+            self.pymod.main_window.show_error_message("Selection Error", "Cannot build a Ramachandran plot for nucleic acids (RNA/DNA).")
+            return None
+        """OLD code not working 
         if True in [e.polymer_type == "nucleic_acid" for e in self.target_sequences]:
             self.pymod.main_window.show_error_message("Selection Error", "Can not build a Ramachandran plot for nucleic acids structures.")
             return None
+        """
 
         if not len(str(self.target_sequences[0].my_sequence).replace('-','')):
             self.pymod.main_window.show_error_message("Selection Error", "No residue for Ramachandran Plot generation")

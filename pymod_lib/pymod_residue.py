@@ -14,11 +14,12 @@ class PyMod_residue:
     """
     Class for a residue of PyMod element.
     """
-
+    
     def __init__(self, three_letter_code, one_letter_code, index=None, seq_index=None, db_index=None):
 
         self.three_letter_code = three_letter_code
         self.one_letter_code = one_letter_code
+
         self.full_name = three_letter_code
 
         self.index = index
@@ -78,6 +79,10 @@ class PyMod_residue:
     def is_non_water_heteroresidue(self):
         return issubclass(self.__class__, PyMod_heteroresidue) and not self.is_water()
 
+    #######################MODIFIED on 17/02/2025#######################################
+    # Checks if the instance belongs to the PyMod_nucleic_acids class.
+    def is_nucleic_acid(self):
+        return isinstance(self, PyMod_nucleic_acids)
 
     def get_pymol_selector(self):
         """
@@ -138,3 +143,69 @@ class PyMod_modified_residue(PyMod_heteroresidue):
 
 class PyMod_water_molecule(PyMod_heteroresidue):
     hetres_type = "water"
+
+
+####################MODIFIED on 17/02/2025#####################
+class PyMod_nucleic_acids(PyMod_residue):
+    """
+    This class represents a nucleic acid residue (DNA/RNA) in PyMod.
+    It inherits from PyMod_residue but includes specific attributes
+    for identifying DNA and RNA bases.
+    """
+
+    # Defines the type of residue as a nucleic acid
+    hetres_type = "nucleic_acid"
+
+    # Dictionary to map DNA three-letter codes to one-letter codes
+    dna_bases = {'DA': 'A', 'DT': 'T', 'DG': 'G', 'DC': 'C'}
+
+    # Dictionary to map RNA three-letter codes to one-letter codes
+    rna_bases = {'A': 'A', 'U': 'U', 'G': 'G', 'C': 'C'}
+
+    def __init__(self, three_letter_code, one_letter_code, index=None, seq_index=None, db_index=None):
+        """
+        Constructor for the PyMod_nucleic_acids class.
+
+        three_letter_code: The three-letter PDB code for the nucleic acid (e.g., 'DA' for DNA Adenine).
+        one_letter_code: The one-letter representation (e.g., 'A' for Adenine).
+        index: The index of the residue in the sequence.
+        seq_index: The sequence index, used for alignment.
+        db_index: The database index (PDB residue index).
+        
+        """
+
+        # Call the constructor of the parent class (PyMod_residue)
+        super().__init__(three_letter_code, one_letter_code, index, seq_index, db_index)
+
+        # Determine whether the residue belongs to DNA or RNA
+        if three_letter_code in self.dna_bases:
+            self.nucleic_type = "DNA"
+            self.polymer_type = "dna"  # Assigns the polymer type as "dna"
+        elif three_letter_code in self.rna_bases:
+            self.nucleic_type = "RNA"
+            self.polymer_type = "rna"  # Assigns the polymer type as "rna"
+        else:
+            self.nucleic_type = None  # If not recognized as a nucleic acid
+            self.polymer_type = "protein"  # Default to "protein" if not DNA/RNA
+
+    def is_nucleic_acid(self):
+        """
+        Check if the residue is a nucleic acid (DNA or RNA).
+        :return: True if the residue is DNA or RNA, False otherwise.
+        """
+        return True
+
+    def is_dna(self):
+        """
+        Check if the residue belongs to DNA.
+        :return: True if the residue is DNA, False otherwise.
+        """
+        return self.nucleic_type == "DNA"
+
+    def is_rna(self):
+        """
+        Check if the residue belongs to RNA.
+        :return: True if the residue is RNA, False otherwise.
+        """
+        return self.nucleic_type == "RNA"
+

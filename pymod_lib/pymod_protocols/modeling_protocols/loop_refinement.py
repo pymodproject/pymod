@@ -12,6 +12,7 @@ import shutil
 
 import pymod_lib.pymod_structure as pmstr
 
+
 from .homology_modeling import MODELLER_homology_modeling, Modeling_cluster
 
 
@@ -54,10 +55,22 @@ class MODELLER_loop_refinement(MODELLER_homology_modeling):
             self.pymod.main_window.show_error_message("Selection Error", "Please select only sequences that have a structure loaded in PyMOL.")
             return None
 
-        # Checks that no nucleic acids have been selected.
+        # Check that no nucleic acids (DNA/RNA) have been selected.
+        ##############MODIFIED on 18/02/2025##################
+        # If any selected sequence is a nucleic acid, display an error message 
+        # and prevent the loop refinement process from proceeding.
+        if any(e.polymer_type in ["dna", "rna"] for e in selected_sequences):
+            self.pymod.main_window.show_error_message(
+                "Selection Error", 
+                "Cannot perform loop refinement on nucleic acids (RNA/DNA)."
+            )
+            return None
+
+        """OLD code not working 
         if True in [e.polymer_type == "nucleic_acid" for e in selected_sequences]:
             self.pymod.main_window.show_error_message("Selection Error", "Can not perform loop refinement with structures with nucleic acids.")
             return None
+        """
 
         # Checks that all target chains come from the same PDB file.
         original_pdbs_set = set([t.get_structure_file(full_file=True) for t in selected_sequences])

@@ -52,13 +52,35 @@ class Profile_alignment(Alignment_protocol):
             return True
         else:
             return False
-
+    
+    ########################MODIFIED on 19/02/2025###########################(__init__)
+    def check_alignment_selection_nucleic_acids(self):
+        """
+        Checks whether the selected sequences contain nucleic acids.
+        Returns True if no nucleic acids (DNA/RNA) are present, allowing the alignment to proceed.
+        """
+        correct_selection = False
+        if not any(e.polymer_type in ["dna", "rna"] for e in self.selected_root_sequences_list):
+            correct_selection = True
+        return correct_selection
+        
 
     def selection_not_valid(self):
         title = "Selection Error"
         message = ("Please select at least one entire cluster and some other sequences"
                    " in order to perform a profile alignment.")
         self.pymod.main_window.show_error_message(title, message)
+
+    ########################MODIFIED on 19/02/2025###########################(__init__)
+    def selection_not_valid_nucleic_acids(self):
+        """
+        Called to inform the user that there is not a right selection (nucleic acids) in order to perform an
+        alignment.
+        """
+        title = "Selection Error"
+        message = "Cannot use Alignments tools on nucleic acids (RNA/DNA)."
+        self.pymod.main_window.show_error_message(title, message)
+
 
 
     def check_sequences_level(self):
@@ -93,6 +115,7 @@ class Profile_alignment(Alignment_protocol):
 
     @catch_protocol_exception
     def perform_alignment_protocol(self):
+                
         if self.alignment_mode == "sequence-to-profile":
             self.perform_sequence_to_profile_alignment()
 

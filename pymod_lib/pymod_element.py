@@ -375,6 +375,7 @@ class _PyMod_sequence_element(PyMod_element):
 
         self.my_sequence = sequence
         self.residues = residues
+
         self._polymer_residues = None
 
         if self.residues == None and self.my_sequence == None:
@@ -443,6 +444,7 @@ class _PyMod_sequence_element(PyMod_element):
         dna = [nt for nt in list(pmdt.dna.keys())]
         rna = [nt for nt in list(pmdt.rna.keys())]
         
+        """OLD not working
         for r in self.residues:
             if r.is_standard_residue():
                 if r.three_letter_code in dna:
@@ -451,7 +453,37 @@ class _PyMod_sequence_element(PyMod_element):
                 elif r.three_letter_code in rna:
                     self.polymer_type = "rna"
                     break
+        """
 
+        #####################MODIFIED on 19/02/2025###########################
+        """
+        Determines the polymer type (DNA/RNA) of a given set of residues.  
+        -If a residue already has a 'polymer_type' attribute set to 'dna' or 'rna', it is retained.  
+        -Otherwise, the polymer type is assigned based on the three-letter residue code.  
+        -The process stops as soon as a DNA or RNA residue is identified.        
+        
+        """
+        for r in self.residues:
+            # Avoid overwriting polymer_type if it already exists
+            if hasattr(r, "polymer_type") and r.polymer_type in ["dna", "rna"]:
+                # If the residue already has a 'polymer_type' attribute with a value of 'dna' or 'rna'
+                # This ensures that if the residue is already classified as DNA or RNA, we don't overwrite it
+                self.polymer_type = r.polymer_type
+                # Stop checking further residues as we have confirmed that this residue is part of a nucleic acid
+                break
+
+            # Otherwise, determine polymer_type based on three-letter code
+            elif r.is_standard_residue():
+                # If the residue is a standard residue (not water, ligands, or heteroresidues)
+                if r.three_letter_code in dna:
+                    # If the three-letter code matches a DNA base, set 'polymer_type' to "dna"
+                    self.polymer_type = "dna"
+                    break  # Stop checking further once DNA is identified
+                elif r.three_letter_code in rna:
+                    # If the three-letter code matches an RNA base, set 'polymer_type' to "rna"
+                    self.polymer_type = "rna"
+                    break  # Stop checking further once RNA is identified
+        
         self.color_by = "regular"
 
 

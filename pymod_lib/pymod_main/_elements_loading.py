@@ -130,18 +130,18 @@ class PyMod_elements_loading:
             raise PyModInvalidFile("Can not open an invalid '%s' file." % file_format)
         
         ###################MODIFIED on 09/02/2025###########################################
-        
-        # Rename the PDB file by replacing '-' with '_'
+    
+        # Rename the PDB file by replacing '-' with '_' and also spaces with "_"
         pdb_dir = os.path.dirname(pdb_file_full_path)  # Gets the directory of the PDB file
         pdb_filename = os.path.basename(pdb_file_full_path)  # Gets the name of the PDB file
 
+        
         ###############MODIFIED on 14/02/2025############################
+        new_pdb_filename = pdb_filename.replace("-", "_")  #Replaces hyphens with underscores in the file name
+        new_pdb_filename = new_pdb_filename.replace(" ", "_") #replaces spaces with _
+        ###############MODIFIED on 19/02/2025############################
         #Replace all non-alphanumeric characters with "_"
-        #non_alphanumeric_char=
-        #new_string = re.sub(r'\W+', '_', original_string)
-        new_pdb_filename = pdb_filename.replace("-", "_")  # Replaces hyphens with underscores in the file name
-        new_pdb_filename = new_pdb_filename.replace(" ", "_")
-        #new_pdb_filename = new_pdb_filename.strip(" ")  # Replaces spaces with underscores in the file name
+        new_pdb_filename = re.sub(r'\W+', '_', new_pdb_filename)  # Replace all non-alphanumeric characters with "_"
         new_pdb_file_full_path = os.path.join(pdb_dir, new_pdb_filename)  # Constructs the new full file path
 
 

@@ -502,7 +502,18 @@ class Regular_sequence_alignment(Regular_alignment):
         if len(self.selected_elements) > 1:
             correct_selection = True
         return correct_selection
-
+    
+    ########################MODIFIED on 19/02/2025###########################(__init__)
+    def check_alignment_selection_nucleic_acids(self):
+        """
+        Checks whether the selected elements contain nucleic acids (DNA or RNA).
+        If no nucleic acids are found, the selection is considered valid.
+        """
+        correct_selection = False
+        if not any(e.polymer_type in ["dna", "rna"] for e in self.selected_elements):
+            correct_selection = True
+        return correct_selection
+    
     def selection_not_valid(self):
         """
         Called to inform the user that there is not a right selection in order to perform an
@@ -511,6 +522,17 @@ class Regular_sequence_alignment(Regular_alignment):
         title = "Selection Error"
         message = "Please select two or more sequences for the alignment."
         self.pymod.main_window.show_error_message(title, message)
+
+    ########################MODIFIED on 19/02/2025###########################(__init__)
+    def selection_not_valid_nucleic_acids(self):
+        """
+        Called to inform the user that there is not a right selection (nucleic acids) in order to perform an
+        alignment.
+        """
+        title = "Selection Error"
+        message = "Cannot use Alignments tools on nucleic acids (RNA/DNA)."
+        self.pymod.main_window.show_error_message(title, message)
+
 
 
 ###################################################################################################
@@ -526,10 +548,17 @@ class Regular_structural_alignment(Regular_alignment):
             self.invalid_selection_message = "Please select only elements with structures."
             return False
 
+        ############################MODIFIED on 20/02/2025#########################
+        # Ensure that no nucleic acids are selected.
+        if self.check_alignment_selection_nucleic_acids():
+            self.invalid_selection_message = "Cannot perform a structural alignment with nucleic acids (RNA/DNA)."
+            return False
+        """OLD not working
         # And that no nucleci acids are selected.
         if True in [e.polymer_type == "nucleic_acid" for e in self.pymod.get_selected_sequences()]:
             self.invalid_selection_message = "Can not perform a structural alignment with nucleic acids elements."
             return False
+        """
 
         # Checks that there are at least two selected elements.
         if len(self.selected_elements) < 2:
@@ -537,11 +566,26 @@ class Regular_structural_alignment(Regular_alignment):
             return False
 
         return True
+    ############################MODIFIED on 20/02/2025#########################
+    def check_alignment_selection_nucleic_acids(self):
+        """
+        Checks if any of the selected elements are nucleic acids.
+        """
+        return any(e.polymer_type in ["dna", "rna"] for e in self.selected_elements)
 
 
     def selection_not_valid(self):
         title = "Structures Selection Error"
         self.pymod.main_window.show_error_message(title, self.invalid_selection_message)
+
+    ############################MODIFIED on 20/02/2025#########################
+    def selection_not_valid_nucleic_acids(self):
+        """
+        Displays an error message when nucleic acids are selected.
+        """
+        title = "Selection Error"
+        message = "Cannot use Structural Alignment tools on nucleic acids (RNA/DNA)."
+        self.pymod.main_window.show_error_message(title, message)
 
 
     def get_options_from_gui(self):

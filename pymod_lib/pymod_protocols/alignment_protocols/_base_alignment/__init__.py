@@ -144,7 +144,16 @@ class Alignment_protocol(PyMod_protocol):
         if not self.check_alignment_selection():
             self.selection_not_valid()
             return None
+        
+        #########################MODIFIED on 19/02/2025################################
+        # Check if the selection is correct about nucleic acids (_base_regular_alignment.py).
+        if not self.check_alignment_selection_nucleic_acids():
+            # If the selection is not valid (for nucleic acids), call the error handling method
+            self.selection_not_valid_nucleic_acids()
+            return None
 
+        
+        
         # Ask if the user wants to proceed with rebuild-entire-old-alignment or extract-siblings if
         # needed.
         if not self.check_sequences_level():

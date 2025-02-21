@@ -15,6 +15,7 @@ import pickle
 
 from pymol import cmd
 
+
 try:
     import modeller
     import modeller.automodel
@@ -140,6 +141,14 @@ class MODELLER_homology_modeling(PyMod_protocol, MODELLER_common):
         if False in [s.can_be_modeled() for s in selected_sequences]:
             self.pymod.main_window.show_error_message("Selection Error", "Please select only sequences that do not have a structure loaded in PyMOL.")
             return None
+        
+        # Checks that no nucleic acids have been selected.
+        ##############MODIFIED on 18/02/2025####################################
+        ##############warnings for Homology Modeling###############
+        if any(e.polymer_type in ["dna", "rna"] for e in selected_sequences):
+            self.pymod.main_window.show_error_message("Selection Error", "Cannot perform Homology Modeling on nucleic acids (RNA/DNA).")
+            return None
+
 
         # Checks that all the selected sequences are currently aligned to some other sequence
         # (aligned sequences are always 'children'). Only sequences aligned to some template can be

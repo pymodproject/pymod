@@ -22,6 +22,11 @@ from pymod_lib.pymod_gui.shared_gui_components_qt import (PyMod_protocol_window_
                                                           PyMod_radioselect_qt,
                                                           PyMod_combobox_qt)
 
+###############################MODIFIED on 20/02/2025#############################################
+from pymod_lib.pymod_protocols.evolutionary_analysis_protocols.csv_export import CAMPOCSVExporter #CAMPOCSVExporter class is available for use in the CAMPO_analysis class.
+
+
+
 
 class CAMPO_analysis(Evolutionary_analysis_protocol):
 
@@ -29,6 +34,12 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
     campo_matrices_dict = {"Blosum62": "blosum62", "Blosum90": "blosum90", "Blosum80": "blosum80",
                            "Blosum50": "blosum50", "Blosum45": "blosum45",
                            "PAM30": "pam30", "PAM120": "pam120", "PAM250": "pam250"}
+   ###############MODIFIED on 20/02/2025################################
+    def __init__(self, pymod, input_cluster_element):
+        super().__init__(pymod, input_cluster_element)  # If using a base class
+        # Initialize the CSV exporter
+        self.csv_exporter = None  # Set to None initially
+
 
     def launch_from_gui(self):
         self.build_campo_window()
@@ -50,8 +61,11 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
             title="CAMPO algorithm options",
             upper_frame_title="Here you can modify options for CAMPO",
             submit_command=self.campo_state)
-        self.campo_window.show()
+        #self.campo_window.show()
 
+        #########################MODIFIED on 20/02/2025 #############################################
+        self.csv_exporter = CAMPOCSVExporter(self.pymod, self.input_cluster_element, self.campo_window) #Now that campo_window is created, pass campo_window to CAMPOCSVExporter
+        self.campo_window.show()
 
     def campo_state(self):
         """
@@ -90,83 +104,16 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
                 seq._has_campo_scores = True
                 self.pymod.main_window.color_element_by_campo_scores(seq)
 
+            #############################MODIFIED on 20/02/2025########################
+            # Use the new class to save the CSV
+            selected_seq = self.campo_window.save_file_cbx.get()  # Get the selected sequence
+            self.csv_exporter.save_csv(campo_list, selected_seq)  # Export the CSV
+
+
         except Exception as e:
             self.pymod.main_window.show_error_message("CAMPO Error",
                 "Could not compute CAMPO scores because of the following error: '%s'.)" % e)
 
-        #############################MODIFIED on 12/02/2025#################################
-        ########################DOWNLOADING CSV file from the option all in campo#######################
-
-        # Function to fix the incorrect CSV format
-        def right_format_csv(table_campo):
-            
-            df = pd.read_csv(table_campo)
-            
-            for col in df.columns[1:]:
-                counter = 1  # Amino acid numbering
-                for i in range(len(df)):
-                  
-                    if isinstance(df[col][i], str) and "," in df[col][i]:
-                        aa, score = df[col][i].split(",")  # Split AA and score
-                        score = float(score)
-
-                        # Handle the special case of a dash ('-') in the alignment
-                        if aa == "-":
-                            df.at[i, col] = "-"  #Keep the dash, remove the score
-                        else:
-                            df.at[i, col] = f"{aa}-{counter},{score}" #Stores a formatted string "aa-counter,score" in the (i, col) cell of `df`.
-                            counter += 1  
-
-            #Overwrite the CSV file with the corrected format
-            try:
-                df.to_csv(campo_txt_path, index=False)
-            #####################MODIFIED on 14/02/2025#######################################
-            #warnings if the file doens't exist or no permissions to write it or other error
-            except FileNotFoundError:
-                warnings.warn(f"File not found: {campo_txt_path}. The file may have been moved or deleted.", RuntimeWarning)
-            except PermissionError:
-                warnings.warn(f"Permission denied: Cannot write to {campo_txt_path}. Check file permissions.", RuntimeWarning)
-            except Exception as e:
-                warnings.warn(f"An unexpected error occurred while writing to {campo_txt_path}: {e}", RuntimeWarning)
-
-
-        # Get aligned sequences to prepare the table 
-        aligned_sequences = self.input_cluster_element.get_children()
-        sequence_dict = {}
-        headers = ["Position"]
-        for seq in aligned_sequences:
-            seq_name = seq.my_header
-            seq_sequence = seq.my_sequence
-            sequence_dict[seq_name] = seq_sequence
-            headers.append(seq_name)
-
-        max_len = max(len(seq) for seq in sequence_dict.values())
-
-        table = []
-        #populating the table 
-        for i in range(max_len):
-            row = [f"AA{i+1},score"]  # AA position starts from 1
-            for seq_id in sequence_dict:
-                seq = sequence_dict[seq_id]
-                if i < len(seq):
-                    aa = seq[i]  # Get the amino acid
-                    score = campo_list[i]['campo-score'] if i < len(campo_list) else ""  # Get the score if available
-                    row.append(f"{aa},{score}")  # Add AA and score
-                else:
-                    row.append("")  # Leave empty if sequence is shorter
-            table.append(row)
-
-        # Write the original CSV file when the user chooses option all 
-        campo_txt_path = os.path.join(self.pymod.alignments_dirpath, "alignment_table_campo_all.csv")
-        with open(campo_txt_path, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            writer.writerows(table)
-
-        # Call the formatting function after writing the file
-        right_format_csv(campo_txt_path)
-
-        
 
 class CAMPO:
     """
@@ -448,21 +395,16 @@ class CAMPO_options_window_qt(PyMod_protocol_window_qt):
         self.campo_exclude_gaps_rds.setvalue("Yes")
         self.middle_formlayout.add_widget_to_align(self.campo_exclude_gaps_rds)
 
-        
-        ##########################MODIFIED on 12/09/2025#################################
-        # Scoring matrix combobox.
-        # Create a combobox for downloading CAMPO results as a CSV file
-        self.save_file_cbx = PyMod_combobox_qt(label_text="Download CAMPO results as CSV?",
-                                                #items=["No", "Yes"]
+    
+        #############################MODIFIED on  20/02/2025#################################
+        # Combobox for CSV download
+        self.save_file_cbx = PyMod_combobox_qt(label_text="Download CAMPO results as CSV",
                                                 items=self.protocol.aligned_sequences_headers)
-
         self.save_file_cbx.combobox.setCurrentIndex(0)
         self.middle_formlayout.add_widget_to_align(self.save_file_cbx)
-
         self.middle_formlayout.set_input_widgets_width("auto", padding=10)
-        
-        
 
+     
 
     def validate_input(self):
 

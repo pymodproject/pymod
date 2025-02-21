@@ -8,6 +8,8 @@ import os
 from Bio import SeqIO
 
 import pymod_lib.pymod_vars as pmdt
+##############MODIFIED on 18/02/2025##########
+import pymod_lib.pymod_residue as res
 from pymod_lib.pymod_seq.seq_io import convert_sequence_file_format
 
 from ._base_alignment._base_regular_alignment import Regular_sequence_alignment
@@ -44,10 +46,19 @@ class SALIGN_seq_alignment(SALIGN_alignment):
                     print("- WARNING: could not use structural information in this alignment because of an unknown residue in '%s'." % (e.my_header))
                     self.use_str_information = False
                     break
+                
+                ##############MODIFIED on 18/02/2025##########
+                if isinstance(e, res.PyMod_nucleic_acid):  # Using PyMod_residue
+                    print(f"- WARNING: could not use structural information in this alignment because '{e.my_header}' is a nucleic acid element.")
+                    self.use_str_information = False
+                    break
+                
+                """
                 if e.polymer_type == "nucleic_acid":
                     print("- WARNING: could not use structural information in this alignment because '%s' is a nucleic acid element." % (e.my_header))
                     self.use_str_information = False
                     break
+                """
 
     def run_regular_alignment_program(self, sequences_to_align, output_file_name, use_parameters_from_gui=True, use_structural_information=False):
         self.check_structural_information()

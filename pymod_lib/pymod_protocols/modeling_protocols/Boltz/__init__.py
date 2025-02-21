@@ -84,6 +84,17 @@ class BOLTZ_model(PyMod_protocol):
             self.pymod.main_window.show_error_message("Selection Error", "Please select at least one target sequence to use Boltz-1 modeling tool.")
             return None
 
+        ####################MODIFIED on 18/02/2025######################
+        # Check if any selected sequence is a nucleic acid (DNA/RNA).
+        # If so, display an error message and prevent the Boltz-1 modeling tool from proceeding.
+        if any(e.polymer_type in ["dna", "rna"] for e in self.selected_sequences):
+            self.pymod.main_window.show_error_message(
+                "Selection Error", 
+                "Cannot use Boltz-1 modeling tool for nucleic acids (RNA/DNA)."
+            )
+            return None
+
+
         # Checks if all the selected sequences can be used to build a model.
         if False in [s.can_be_modeled() for s in self.selected_sequences]:
             self.pymod.main_window.show_error_message("Selection Error", "Please select only sequences that do not have a structure loaded in PyMOL.")

@@ -18,13 +18,26 @@ class Structural_analysis_mixin:
     Mixin class used in the 'Contact Map' and 'Structural Divergence Plot' protocols.
     """
 
+    ##############################MODIFIED on 18/02/2025######################################
+    """
+        Checks if any selected target sequence is a nucleic acid (DNA/RNA).
+        If nucleic acids are present, displays an error message and prevents the analysis.
+    """
+    def check_protein_selection(self, error_title="Selection Error"):
+        if any(e.polymer_type in ["dna", "rna"] for e in self.target_sequences):
+            self.pymod.main_window.show_error_message(error_title, "Cannot perform Structural Analysis (Contact Map and Structural Divergence Plot) for nucleic acids structures (RNA/DNA).")
+            return False
+        return True
+
+    ##############OLD code not working###########à
+    """
     def check_protein_selection(self, error_title="Selection Error"):
         if any([e.polymer_type == "nucleic_acid" for e in self.target_sequences]):
             self.pymod.main_window.show_error_message(error_title,
                 "Can not perform the analysis for nucleic acids structures.")
             return False
         return True
-
+    """
 
     def check_multiple_selection(self, error_title="Selection Error"):
 

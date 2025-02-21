@@ -71,12 +71,21 @@ class DOPE_assessment(PyMod_protocol, MODELLER_common):
             self.pymod.main_window.show_error_message("MODELLER Error", message)
             return None
 
+        #SELECTION ERRORS
         if len(self.selected_sequences) == 0:
             self.pymod.main_window.show_error_message("Selection Error", "Please select at least one structure to assess.")
             return None
+        ####################MODIFIED on 18/02/2025###################
+        # Check if any selected sequence is a nucleic acid (DNA/RNA).
+        # If so, display an error message and prevent the DOPE assessment from proceeding.
+        if any(e.polymer_type in ["dna", "rna"] for e in self.selected_sequences):
+            self.pymod.main_window.show_error_message("Selection Error", "Can not perform DOPE assessment on nucleic acids structures (RNA/DNA).")
+            return None
+        """OLD code not working 
         if any([e.polymer_type == "nucleic_acid" for e in self.selected_sequences]):
             self.pymod.main_window.show_error_message("Selection Error", "Can not perform DOPE assessment on nucleci acids structures.")
             return None
+        """
         if not self.pymod.all_sequences_have_structure(self.selected_sequences):
             self.pymod.main_window.show_error_message("Selection Error", "Please select only elements that have a 3D structure currently loaded in PyMOL.")
             return None

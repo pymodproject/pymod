@@ -63,12 +63,23 @@ class ESM_search(PyMod_protocol):
 
         # First check if at least one sequence is selected.
         if not len(selected_sequences) > 0:
-            self.pymod.main_window.show_error_message("Selection Error", "Please select at least one target sequence to use AFDB search tool.")
+            self.pymod.main_window.show_error_message("Selection Error", "Please select at least one target sequence to use ESMFold search tool.")
             return None
+
+        ####################MODIFIED on 18/02/2025######################
+        # Check if any selected sequence is a nucleic acid (DNA/RNA).
+        # If so, display an error message and prevent the ESMFold search tool from proceeding.
+        if any(e.polymer_type in ["dna", "rna"] for e in selected_sequences):
+            self.pymod.main_window.show_error_message(
+                "Selection Error", 
+                "Cannot use ESMFold search tool for nucleic acids (RNA/DNA)."
+            )
+            return None
+
 
         # First check if at least one sequence is selected.
         if len(selected_sequences) > 1:
-            self.pymod.main_window.show_error_message("Selection Error", "Please select only one target sequence to use AFDB search tool.")
+            self.pymod.main_window.show_error_message("Selection Error", "Please select only one target sequence to use ESMFold search tool.")
             return None
 
         # Checks if all the selected sequences can be used to build a model.

@@ -32,10 +32,17 @@ class PSIPRED_prediction(PyMod_protocol, PSI_BLAST_common):
             self.pymod.main_window.show_error_message("PSIPRED Error",
                 "Please select at least one sequence to be analyzed with PSIPRED.")
             return False
+        ##############################MODIFIED on 18/02/2025, Selection Error######################################
+        # Check if any selected target sequence is a nucleic acid (DNA/RNA).
+        # If so, display an error message and prevent the analysis from proceeding.
+        elif any(e.polymer_type in ["dna", "rna"] for e in self.target_sequences):
+            self.pymod.main_window.show_error_message("Selection Error", "Cannot perform the analysis (PSIPRED) for nucleic acids structures (RNA/DNA).")
+            return False
 
         if not self.check_psipred_parameters():
             return False
-
+    
+    
         # Run psipred on all the selected sequences.
         self.predicted_sequences = []
         if not self.pymod.use_protocol_threads:
