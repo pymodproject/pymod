@@ -25,6 +25,10 @@ from pymod_lib.pymod_gui.shared_gui_components_qt import (PyMod_protocol_window_
 ###############################MODIFIED on 20/02/2025#############################################
 from pymod_lib.pymod_protocols.evolutionary_analysis_protocols.csv_export import CAMPOCSVExporter #CAMPOCSVExporter class is available for use in the CAMPO_analysis class.
 
+#############################MODIFIED on  24/02/2025#################################
+from PyQt5.QtWidgets import QSpacerItem, QSizePolicy 
+
+
 
 
 
@@ -107,12 +111,19 @@ class CAMPO_analysis(Evolutionary_analysis_protocol):
             #############################MODIFIED on 20/02/2025########################
             # Use the new class to save the CSV
             selected_seq = self.campo_window.save_file_cbx.get()  # Get the selected sequence
-            self.csv_exporter.save_csv(campo_list, selected_seq)  # Export the CSV
 
+            #############################MODIFIED on 26/02/2025########################
+            selected_format=self.campo_window.save_file_cbx_format.get() # Get the selected format
+            
+            #############################MODIFIED on 20/02/2025########################
+            self.csv_exporter.save_csv(campo_list, selected_seq,selected_format)  # Export the CSV
 
+        
         except Exception as e:
+
             self.pymod.main_window.show_error_message("CAMPO Error",
                 "Could not compute CAMPO scores because of the following error: '%s'.)" % e)
+
 
 
 class CAMPO:
@@ -395,14 +406,32 @@ class CAMPO_options_window_qt(PyMod_protocol_window_qt):
         self.campo_exclude_gaps_rds.setvalue("Yes")
         self.middle_formlayout.add_widget_to_align(self.campo_exclude_gaps_rds)
 
-    
-        #############################MODIFIED on  20/02/2025#################################
-        # Combobox for CSV download
-        self.save_file_cbx = PyMod_combobox_qt(label_text="Download CAMPO results as CSV",
-                                                items=self.protocol.aligned_sequences_headers)
-        self.save_file_cbx.combobox.setCurrentIndex(0)
+
+        #############################MODIFIED on  24/02/2025#################################
+        # Spacer to create space between the sections Toss gaps and Save CAMPO results as CSV
+        spacer = QSpacerItem(40, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.middle_formlayout.addItem(spacer)
+
+        #############################MODIFIED on  20/02/2025 and 24/02/2025#################################
+        # Combobox for CSV download When choosing selected_seq or No options
+        self.save_file_cbx = PyMod_combobox_qt(label_text="Save CAMPO results as CSV?",
+                                                items=self.protocol.aligned_sequences_headers + ["No"]
+                                                )
+        
+        #############################MODIFIED on 25/02/2025#################################
+        # Combobox for CSV download when choosing Format options
+        self.save_file_cbx_format = PyMod_combobox_qt(label_text="Format",
+                                                items=["with alignment"]+["without alignment"])
+
+        
+        #Set No as default value
+        self.save_file_cbx.combobox.setCurrentIndex(4)
         self.middle_formlayout.add_widget_to_align(self.save_file_cbx)
+        #############################MODIFIED on 25/02/2025################################# 
+        self.middle_formlayout.add_widget_to_align(self.save_file_cbx_format)
+
         self.middle_formlayout.set_input_widgets_width("auto", padding=10)
+        
 
      
 

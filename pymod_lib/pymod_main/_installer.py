@@ -1014,6 +1014,11 @@ class MODELLER_conda_install_thread(QtCore.QThread):
                                                            self.pymod_pkgs_dirpath)
         self.complete_installation.emit(mod_install_result)
 
+##########################MODIFIED on 25/02/2025##########################################
+######## The function takes a conda command as input (e.g., 'install <package>') and runs it using the system's terminal
+def rosconda(command):
+    """Esegue un comando con conda."""
+    os.system(f"conda {command}")  #Runs the conda command in the terminal
 
 def perform_modeller_installation(modeller_key,
                                   pymod_envs_dirpath,
@@ -1114,18 +1119,30 @@ def perform_modeller_installation(modeller_key,
                 else:
                     print("- Installing the 'modeller' conda package in root conda env")
                     stdout = conda_api.run_command(conda_api.Commands.INSTALL, "modeller")
+                    ##########################MODIFIED on 25/02/2025##########################################
+                    # Additional command for rosconda
+                    rosconda("install -c conda-forge modeller --solver=classic")
             else:
                 print("- Installing the 'modeller' conda package in a new conda env %s" % str(pymod_env_dirpath))
                 stdout = conda_api.run_command(conda_api.Commands.INSTALL, "-p", pymod_env_dirpath, "modeller")
+                ##########################MODIFIED on 25/02/2025##########################################
+                # Additional command for rosconda with the specified environment path
+                rosconda(f"install -c conda-forge modeller --solver=classic -p {pymod_env_dirpath}")
 
         # other OS:
         else:
             if not install_modeller_in_root_conda_env:
                 print("- Installing the 'modeller' conda package in a new conda env %s" % str(pymod_env_dirpath))
                 stdout = conda_api.run_command(conda_api.Commands.INSTALL, "-p", pymod_env_dirpath, "modeller")
+                ##########################MODIFIED on 25/02/2025##########################################
+                # Additional command for rosconda with the specified environment path
+                rosconda(f"install -c conda-forge modeller --solver=classic -p {pymod_env_dirpath}")
             else:
                 print("- Installing the 'modeller' conda package in root conda env")
                 stdout = conda_api.run_command(conda_api.Commands.INSTALL, "modeller")
+                ##########################MODIFIED on 25/02/2025##########################################
+                # Additional command for rosconda
+                rosconda("install -c conda-forge modeller --solver=classic")
 
         print("- The 'modeller' package was successfully installed.")
 

@@ -546,11 +546,22 @@ class Select_pae_window_qt(QtWidgets.QMainWindow):
         self.model_vbox = QtWidgets.QVBoxLayout()
         self.model_group.setLayout(self.model_vbox)
 
+        
+        ##################MODIFIED on 28/02/2025#################################
+        
+        self.models_in_session = self.af_session  
+        model=self.models_in_session
+
+        ########OLD CODE ############
+        """
         self.models_in_session = ["AF-O14965_chain_A"]
 
         for model in self.models_in_session:
             self.checkbox = QtWidgets.QCheckBox(model)
             self.model_vbox.addWidget(self.checkbox)
+        """
+        self.checkbox = QtWidgets.QCheckBox(model)
+        self.model_vbox.addWidget(self.checkbox)
 
         self.main_vbox.addWidget(self.model_group)
 
@@ -673,7 +684,8 @@ def show_af_plots(self, af_session, type):
             cp.show()
             print("plotting plddt")
 
-
+    ####################TO MODIFY##############################################
+    ########NOT WORKING############
     elif type == "pae":
 
         """
@@ -697,6 +709,7 @@ def show_af_plots(self, af_session, type):
                        " to download the corresponding PAE values.")
             self.main_window.show_error_message(title, message)
             return None
+
 
         for af_model in self.af_modeling_session_list[af_session]:
             print(af_model)
@@ -815,7 +828,6 @@ def remove_residues_not_in_range(pae_values, res_numbers):
     return pae_values_to_keep
 
 ##### END #####
-
 
 
 # def show_af_plots(self, af_model, type):

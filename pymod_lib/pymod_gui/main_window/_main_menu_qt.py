@@ -421,7 +421,7 @@ class PyMod_main_window_main_menu:
 
         self.boltz_submenu_models = QtWidgets.QMenu('Boltz-1', self)
         self.models_menu.addMenu(self.boltz_submenu_models)
-
+        
         if self.pymod.modeling_session_list != []:
             for modeling_session in self.pymod.modeling_session_list:
                 # Adds a modeling session submenu to the PyMod main menu.
@@ -435,20 +435,30 @@ class PyMod_main_window_main_menu:
         else:
             add_qt_menu_command(self.modeller_submenu_models, "There aren't any models")
 
-        ##########################MODIFIED on 09/02/2025########################################
+    
+        ##########################MODIFIED on 28/02/2025########################################
+        ######The name of the model in section Models<AlphaFold is the real name visible in pymod 
+        ######The plDDT plot working properly
         if self.pymod.af_modeling_session_list:
             for af_session, models in self.pymod.af_modeling_session_list.items():
                 if models:
                     for model_name in models:
-                        label_text = f"AF model: {model_name}"
-                        af_session_submenu = QtWidgets.QMenu(label_text, self)
-                        self.alphafold_submenu_models.addMenu(af_session_submenu)
-                        add_qt_menu_command(af_session_submenu, "pLDDT", lambda a=None, ms=model_name: self.pymod.show_plddt_plot(ms))
-                        add_qt_menu_command(af_session_submenu, "Predicted Aligned Error", lambda a=None, ms=model_name: self.pymod.show_pae_plot(ms))   
-        else:
-            add_qt_menu_command(self.alphafold_submenu_models, "There aren't any models")
+                        ##### MODIFIED #####
+                        if self.pymod.af_modeling_session_list != {}:
+                        ##### END #####
+                            for af_sessions in self.pymod.af_modeling_session_list:
+                                ##### MODIFIED #####
+                                if self.pymod.af_modeling_session_list[af_sessions] != {}:
+                                ##### END #####
+                                    label_text = "%s" % model_name
+                                    af_session_submenu = QtWidgets.QMenu(label_text, self)
+                                    self.alphafold_submenu_models.addMenu(af_session_submenu)
+                                    add_qt_menu_command(af_session_submenu, "pLDDT", lambda a=None, ms=af_sessions: self.pymod.show_plddt_plot(ms))
+                                    add_qt_menu_command(af_session_submenu, "Predicted Aligned Error", lambda a=None, ms=af_sessions: self.pymod.show_pae_plot(ms))
+                        else:
+                            add_qt_menu_command(self.alphafold_submenu_models, "There aren't any models")
         
-        """
+        """OLD CODE --> name model is the af_session
         ##### MODIFIED #####
         if self.pymod.af_modeling_session_list != {}:
         ##### END #####

@@ -51,7 +51,7 @@ class ESPript_analysis(Evolutionary_analysis_protocol, Web_services_common):
             submit_command=self.espript_state)
         self.espript_sec_str_window.show()
 
-
+    
     def espript_state(self):
         """
         Uploads a sequence alignment file in fasta format on schubert (and optionally a structure

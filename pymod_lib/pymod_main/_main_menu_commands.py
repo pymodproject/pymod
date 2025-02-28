@@ -209,7 +209,7 @@ class PyMod_main_menu_commands:
             title = 'Sequence Error'
             message = 'Please check your sequence: only standard amino acid letters, "X" and "-" are allowed.'
             self.main_window.show_error_message(title, message)
-
+    
 
     ##### MODIFIED #####
     def uniprot_id_input_window_state(self):
@@ -224,11 +224,45 @@ class PyMod_main_menu_commands:
             return None
 
         uniprot_id = self.uniprot_id_window.get_sequence_uniprot_id()
+        ########################MODIFICATION on 28/02/2025############################################
+        #####it can recognize also lower case chars for the uniprot ID search
+        uniprot_id = uniprot_id.upper()  # Convert to uppercase before searching
         print(uniprot_id)
 
         uniprot_id_search = re.search("[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}", uniprot_id)
         print(uniprot_id_search)
+        
+        ########################MODIFICATION on 28/02/2025############################################
+        #########Supports the case where the user provides a dirty string that contains other characters besides the UNIPROT ID, otherwise extracts the UNIPROT code from that string###########
+        if not uniprot_id_search:
+            title = 'UniProt ID Error'
+            message = 'Invalid UniProt ID. Please check that the UniProt ID inserted is correct.'
+            self.main_window.show_error_message(title, message)
+            return None
+        
+        uniprot_header = uniprot_id_search.group(0)
+        path = os.path.join(self.temp_directory_dirpath, uniprot_header + ".fasta")
+        #print(path)
+        fastaurl = "https://rest.uniprot.org/uniprotkb/" + uniprot_header + ".fasta"
+        response = requests.get(fastaurl)
 
+        if response.status_code == 200 and response.content:
+            file = open(path, "wb")
+            file.write(response.content)
+            file.close()
+            sequence_record = SeqIO.read(path, 'fasta')
+            #print(sequence_record)
+            sequence = str(sequence_record.seq)
+            self.add_element_to_pymod(self.build_pymod_element_from_args(uniprot_header, sequence))
+            self.uniprot_id_window.destroy()
+            self.main_window.gridder()
+
+        else:
+            title = 'UniProt ID Error'
+            message = f'UniProt ID {uniprot_id} not found in the UniProt database.'
+            self.main_window.show_error_message(title, message)
+
+        """OLD CODE (It does not support the case where the user provides a messy string that contains other characters besides the UniProt ID.)
         if uniprot_id_search and len(uniprot_id_search.group(0)) == len(uniprot_id):
             uniprot_header = uniprot_id_search.group(0)
             path = os.path.join(self.temp_directory_dirpath, uniprot_header + ".fasta")
@@ -256,6 +290,7 @@ class PyMod_main_menu_commands:
             title = 'UniProt ID Error'
             message = 'Invalid UniProt ID. Please check that the UniProt ID inserted is correct.'
             self.main_window.show_error_message(title, message)
+            """
     ##### END #####
 
 
