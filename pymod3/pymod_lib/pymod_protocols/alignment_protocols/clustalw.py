@@ -9,8 +9,6 @@ ClustalW.
 
 import os
 
-from Bio.Align.Applications import ClustalwCommandline
-
 # Protocols.
 from ._clustal_common import Clustal_regular_alignment, Clustal_profile_alignment
 
@@ -82,9 +80,15 @@ class Clustalw_regular_alignment(Clustalw_alignment, Clustal_regular_alignment):
         input_file_path = os.path.join(self.pymod.alignments_dirpath, output_file_name + ".fasta")
         output_file_path = os.path.join(self.pymod.alignments_dirpath, output_file_name + ".aln")
         # Run an alignment with all the sequences using ClustalW command line, through Biopython.
-        cline = ClustalwCommandline(self.pymod.clustalw["exe_file_path"].get_value(),
-                infile=input_file_path, outfile=output_file_path, outorder="INPUT",
-                matrix=matrix, gapopen=gapopen, gapext=gapext)
+        clustalw_path = self.pymod.clustalw["exe_file_path"].get_value()
+        cline = '"' + clustalw_path + '"' + \
+            ' -infile="' + input_file_path + '"' + \
+            ' -outfile="' + output_file_path + '"' + \
+            ' -outorder=INPUT' + \
+            ' -matrix=' + str(matrix) + \
+            ' -gapopen=' + str(gapopen) + \
+            ' -gapext=' + str(gapext)
+        self.pymod.execute_subprocess(cline)
         self.pymod.execute_subprocess(str(cline))
 
 
