@@ -9,8 +9,6 @@ Clustal Omega.
 
 import os
 
-from Bio.Align.Applications import ClustalOmegaCommandline
-
 # Protocols.
 from ._clustal_common import Clustal_regular_alignment, Clustal_profile_alignment
 
@@ -75,23 +73,21 @@ class Clustalomega_regular_alignment(Clustalomega_alignment, Clustal_regular_ali
         output_file_path = os.path.join(self.pymod.alignments_dirpath, output_file_name + ".aln")
         guidetree_file_path = os.path.join(self.pymod.alignments_dirpath, output_file_name + ".dnd")
 
-        cline = ClustalOmegaCommandline(
-            self.tool["exe_file_path"].get_value(),
-            infile= input_file_path,
-            outfile= output_file_path,
-            guidetree_out=guidetree_file_path,
-            force=True, outfmt="clustal")
+        clustalo_path = self.tool["exe_file_path"].get_value()
 
-        cline = str(cline)
+        cline = '"' + clustalo_path + '"' + \
+            ' -i "' + input_file_path + '"' + \
+            ' -o "' + output_file_path + '"' + \
+            ' --guidetree-out="' + guidetree_file_path + '"' + \
+            ' --outfmt=clustal' + \
+            ' --force'
 
         if iterations != 0:
             cline = "%s --iter=%s" % (cline, iterations)
         if use_full_dm:
             cline = "%s --full --full-iter" % (cline)
 
-        # Run MSA with all sequences using CLustalO command line.
         self.pymod.execute_subprocess(cline)
-
 
 class Clustalomega_profile_alignment(Clustalomega_alignment, Clustal_profile_alignment):
     """
