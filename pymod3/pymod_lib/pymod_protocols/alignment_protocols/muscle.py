@@ -9,8 +9,6 @@ MUSCLE.
 
 import os
 
-from Bio.Align.Applications import MuscleCommandline
-
 # Protocols.
 from ._base_alignment._base_regular_alignment import Regular_sequence_alignment
 
@@ -60,18 +58,22 @@ class MUSCLE_regular_alignment(MUSCLE_alignment, Regular_sequence_alignment):
         # Output ALN.
         outaln=os.path.join(self.pymod.alignments_dirpath, output_file_name + ".aln")
         muscle_exec = self.tool["exe_file_path"].get_value()
+
+        cline = '"' + muscle_exec + '"' + \
+            ' -in "' + infasta + '"' + \
+            ' -out "' + outfasta_tree + '"' + \
+            ' -clwout "' + outaln + '"'
+
         if muscle_mode == "highest_accuracy":
-            cline = MuscleCommandline(muscle_exec, input=infasta, out=outfasta_tree, clwout=outaln)
+            pass
         elif muscle_mode == "large_datasets":
-            cline = MuscleCommandline(muscle_exec, input=infasta, out=outfasta_tree, clwout=outaln,
-                                      maxiters=2)
+            cline += ' -maxiters 2'
         elif muscle_mode == "fastest":
-            cline = MuscleCommandline(muscle_exec, input=infasta, out=outfasta_tree, clwout=outaln,
-                                      maxiters=1, diags=True, sv=True, distance1="kbit20_3")
+            cline += ' -maxiters 1 -diags -sv -distance1 kbit20_3'
         else:
             raise KeyError(muscle_mode)
-        self.pymod.execute_subprocess(str(cline))
 
+        self.pymod.execute_subprocess(cline)
 
 class MUSCLE_regular_window_qt(Regular_alignment_window_qt):
 
