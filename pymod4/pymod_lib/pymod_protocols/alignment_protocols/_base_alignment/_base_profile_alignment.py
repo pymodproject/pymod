@@ -1,0 +1,285 @@
+# Copyright 2020 by Giacomo Janson. All rights reserved.
+# This code is part of the PyMod package and governed by its license. Please
+# see the LICENSE file that should have been included as part of this package
+# or the main __init__.py file in the pymod3 folder.
+
+"""
+Profile alignments.
+"""
+
+from pymod_lib import pymod_vars
+
+from pymod_lib.pymod_protocols.alignment_protocols._base_alignment import Alignment_protocol
+from pymod_lib.pymod_exceptions import catch_protocol_exception
+
+from PyQt5.QtWidgets import QMessageBox
+
+
+
+class Profile_alignment(Alignment_protocol):
+
+    alignment_strategy = "profile-alignment"
+
+    #################################################################
+    # Start the alignment process.                                  #
+    #################################################################
+
+    def check_alignment_selection(self):
+        """
+        Checks if the selected elements can be used to perform a profile alignment.
+        """
+        # This will be set to True if there is an adequate selection in order to align two profiles.
+        self.can_perform_ptp_alignment = False
+
+        # Checks if there is at least one cluster which is entirely selected.
+        number_of_selected_clusters = len(self.selected_clusters_list)
+        number_of_involved_clusters = len(self.involved_clusters_list)
+        number_of_root_sequences = len(self.selected_root_sequences_list)
+
+        # No clusters are involved.
+        if number_of_selected_clusters == 0:
+            return False
+        # If there is only one selected cluster and if there is at least one selected sequence this
+        # cluster, then a sequence to profile alignment can be performed.
+        if number_of_involved_clusters == 1 and number_of_selected_clusters == 1 and number_of_root_sequences > 0:
+            return True
+        # Two involved clusters.
+        elif number_of_involved_clusters == 2:
+            # If there aren't any other selected sequences a profile to profile alignment can be
+            # performed.
+            if number_of_selected_clusters == 2 and number_of_root_sequences == 0:
+                self.can_perform_ptp_alignment = True
+            return True
+        # Only sequence to profile alignments can be performed.
+        elif number_of_involved_clusters >= 3:
+            return True
+        else:
+            return False
+    
+    ########################MODIFIED on 20/03/2025###########################(__init__)
+   #### INVALID SELECTION: Nucleic acids in profile alignments
+    def check_alignment_selection_nucleic_acids_profile(self):
+        
+        nucleic_acids_selection = False
+        polymer_types = set()
+
+        # Add polymer types from the selected sequences (only valid elements)
+        for element in self.selected_elements:
+            if hasattr(element, 'get_children'):
+                for child in element.get_children():
+                    if hasattr(child, 'polymer_type'):
+                        polymer_types.add(child.polymer_type)
+            elif hasattr(element, 'polymer_type'):
+                polymer_types.add(element.polymer_type)
+
+        # Add polymer types from sequences in the clusters
+        for cluster in self.involved_clusters_list:
+            for child in cluster.get_children():
+                if hasattr(child, 'polymer_type'):
+                    polymer_types.add(child.polymer_type)
+
+        # Check if nucleic acids are present in the polymer types set
+        if "dna" in polymer_types or "rna" in polymer_types:
+            nucleic_acids_selection = True
+
+        return nucleic_acids_selection
+
+
+     ########################MODIFIED on 20/03/2025###########################(__init__)
+   #### INVALID SELECTION: Mixed polymer types
+    def check_alignment_selection_mixed_polymer_types_profile(self):
+        polymer_types = set()
+
+        # Add polymer types from the selected sequences (only valid elements)
+        for element in self.selected_elements:
+            if hasattr(element, 'polymer_type'):
+                polymer_types.add(element.polymer_type)
+
+        # Add polymer types from sequences in the clusters
+        for cluster in self.involved_clusters_list:
+            for child in cluster.get_children():
+                if hasattr(child, 'polymer_type'):
+                    polymer_types.add(child.polymer_type)
+
+        # Check for mixed polymer types
+        print(f"Polymer types detected: {polymer_types}")
+        return len(polymer_types) > 1
+
+
+    """
+    ########################MODIFIED on 19/02/2025###########################(__init__)
+    def check_alignment_selection_nucleic_acids(self):
+        
+        #Checks whether the selected sequences contain nucleic acids.
+        #Returns True if no nucleic acids (DNA/RNA) are present, allowing the alignment to proceed.
+        
+        correct_selection = False
+        if not any(e.polymer_type in ["dna", "rna"] for e in self.selected_root_sequences_list):
+            correct_selection = True
+        return correct_selection
+    """
+
+    def selection_not_valid(self):
+        title = "Selection Error"
+        message = ("Please select at least one entire cluster and some other sequences"
+                   " in order to perform a profile alignment.")
+        self.pymod.main_window.show_error_message(title, message)
+    
+
+    ########################MODIFIED on 20/03/2025###########################(__init__)
+    ###for protocol not valid for nucleic acids alignments 
+    def protocol_selection_not_valid_nucleic_acids_profile(self):
+        
+        #Called to inform the user that there is not a right selection (nucleic acids) in order to perform an
+        #alignment.
+        
+        title = "Selection Error"
+        message = "Cannot use this Alignment Protocol for nucleic acids (RNA/DNA)."
+        self.pymod.main_window.show_error_message(title, message)
+    
+    
+    ########################MODIFIED on 20/03/2025###########################(__init__)
+    ###Mixed selection of different polymer_type  are not valid for alignments --> selection error 
+    def different_polymer_type_selection_not_valid_profile(self):
+        #Called to inform the user that there is not a right selection (mixed poymer types) in order to perform an alignment.
+        
+        title = "Selection Error"
+        message = "Cannot use Profile Alignments tools on different polymer types."
+        self.pymod.main_window.show_error_message(title, message)
+
+
+    ########################MODIFIED on 20/03/2025###########################(__init__)
+    ###for protocol valid for nucleic acids alignments 
+    def selection_nucleic_acids_alignment_information_profile(self):
+        """
+        Previously popped up an informational message box for a valid nucleic-acid
+        selection. The popup was unnecessary noise, so this is now a no-op; the
+        method is kept so the existing call sites keep working.
+        """
+        pass
+
+    ###informative message for protein sequences selection
+    def selection_proteins_alignment_information_profile(self):
+        """
+        Previously popped up an informational message box for a valid protein
+        selection. The popup was unnecessary noise, so this is now a no-op; the
+        method is kept so the existing call sites keep working.
+        """
+        pass
+
+    ##########END MODIFICATION##########
+
+    """
+    ########################MODIFIED on 19/02/2025###########################(__init__)
+    def selection_not_valid_nucleic_acids(self):
+        
+        #Called to inform the user that there is not a right selection (nucleic acids) in order to perform an
+        #alignment.
+        
+        title = "Selection Error"
+        message = "Cannot use Alignments tools on nucleic acids (RNA/DNA)."
+        self.pymod.main_window.show_error_message(title, message)
+    """
+   
+
+    def check_sequences_level(self):
+        self.clusters_are_involved = True
+        return True
+
+
+    #################################################################
+    # Perform the alignment.                                        #
+    #################################################################
+
+    def define_alignment_mode(self):
+        """
+        Gets several parameters from the GUI in order to define the alignment mode.
+        """
+        # It can be either "sequence-to-profile" or "profile-to-profile".
+        self.alignment_mode = self.alignment_window.get_alignment_mode()
+        # Takes the index of the target cluster.
+        self.target_cluster_index = None
+        # Takes the index of the target cluster for the "keep-previous-alignment" mode.
+        if self.alignment_mode == "sequence-to-profile":
+            # If there is only one cluster involved its index its going to be 0.
+            if len(self.selected_clusters_list) == 1:
+                self.target_cluster_index = 0 # Cluster index.
+            # Get the index of the cluster from the combobox.
+            elif len(self.selected_clusters_list) > 1:
+                if hasattr(self.alignment_window.target_profile_frame, "get_selected_cluster_index"):
+                    self.target_cluster_index = self.alignment_window.target_profile_frame.get_selected_cluster_index()
+                else:
+                    self.target_cluster_index = self.alignment_window.get_selected_cluster_index()
+
+
+    @catch_protocol_exception
+    def perform_alignment_protocol(self):
+                
+        if self.alignment_mode == "sequence-to-profile":
+            self.perform_sequence_to_profile_alignment()
+
+        elif self.alignment_mode == "profile-to-profile":
+            self.perform_profile_to_profile_alignment()
+
+
+    ######################################################
+    # Methods to perform sequence-to-profile alignments. #
+    ######################################################
+
+    def perform_sequence_to_profile_alignment(self):
+        self.run_sequence_to_profile_alignment_program()
+
+
+    #####################################################
+    # Methods to perform profile-to-profile alignments. #
+    #####################################################
+
+    def perform_profile_to_profile_alignment(self):
+        self.run_profile_to_profile_alignment_program()
+
+
+    #################################################################
+    # Import the updated sequences in PyMod.                        #
+    #################################################################
+
+    def create_alignment_element(self):
+
+        #---------------------------------------------------------
+        # Expand an already existing cluster with new sequences. -
+        #---------------------------------------------------------
+
+        if self.alignment_mode == "sequence-to-profile":
+            # Gets the target cluster element.
+            self.alignment_element = self.involved_clusters_list[self.target_cluster_index]
+            # Appends new sequences to the target cluster.
+            for element in self.elements_to_add:
+                self.alignment_element.add_child(element)
+            # Updates the alignment element with new information about the new alignment.
+            self.alignment_element.algorithm = "merged"
+            # alignment_description = "merged with %s" % (pymod_vars.algs_full_names_dict[self.protocol_name])
+            alignment_description = "merged"
+            self.alignment_element.my_header = self.pymod.set_alignment_element_name(alignment_description, self.alignment_element.cluster_id)
+
+        #--------------------------------------
+        # Join two or more existing clusters. -
+        #--------------------------------------
+
+        elif self.alignment_mode == "profile-to-profile":
+            # Find the right mother index in order to build the new cluster where one of the
+            # original ones was placed.
+            lowest_index = min([self.pymod.get_pymod_element_index_in_root(e) for e in self.elements_to_align])
+            # Orders them.
+            self.elements_to_align = sorted(self.elements_to_align, key=lambda el: (self.pymod.get_pymod_element_index_in_root(el),
+                                                                                    self.pymod.get_pymod_element_index_in_container(el)))
+
+            alignment_description = "joined by using " + pymod_vars.algs_full_names_dict[self.protocol_name]
+            # ali_name = "Joined " + self.pymod.set_alignment_element_name(alignment_description, self.pymod.alignment_count)
+
+            # Builds the new "PyMod_element" object for the new alignment.
+            new_cluster = self.pymod.add_new_cluster_to_pymod(cluster_type="alignment",
+                                                # cluster_name=ali_name,
+                                                child_elements=self.elements_to_align,
+                                                algorithm=self.protocol_name,
+                                                update_stars=True)
+            # Moves the new element from the bottom of the list to its new position.
+            self.pymod.change_pymod_element_list_index(new_cluster, lowest_index)

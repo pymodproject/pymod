@@ -1,5 +1,16 @@
-# PyMod 3 Changelog
-This file contains descriptions of changes of new PyMod 3 releases.
+# PyMod Changelog
+This file contains descriptions of changes of new PyMod releases.
+
+## Version 4.0.0 (16/11/2026)
+- DNA and RNA supported as molecular objects; comparative modeling of protein–nucleic acid complexes with MODELLER.
+- Retrieval of predicted models from the AlphaFold Protein Structure Database and ESM Atlas.
+- Structure prediction with ESMFold2 and Boltz-2 (single proteins and protein–ligand complexes, custom MSAs as input).
+- Structure and interface refinement (clash detection and local optimization with Open Babel).
+- Maximum-likelihood phylogenetic trees with RAxML and IQ-TREE 2, visualized with the ETE toolkit.
+- Structure-conditioned sequence design with ESM3 and binder design with BoltzProt-1.
+- Open Babel can be installed from the PyMod components installer.
+
+# PyMod 3
 
 ## Version 3.0.2 (17/8/2020)
 - Added the possibility to import results from HH-suite output files (HHR and A3M).

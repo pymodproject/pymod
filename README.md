@@ -1,25 +1,34 @@
-# PyMod 3
-PyMod 3 is an open source [PyMOL](https://github.com/schrodinger/pymol-open-source "PyMOL GitHub repository") plugin, designed to act as an interface between PyMOL and several bioinformatics tools (for example: BLAST+, HMMER, Clustal Omega, MUSCLE, PSIPRED and MODELLER). The current PyMod release, PyMod 3, is compatible with the most recent PyMOL versions (see the *Requirements* section below) and has been extended with new functionalities with respect to its predecessor (PyMod 2). Starting from the amino acid sequence of a target protein, users may take advantage of PyMod 3 to carry out the three steps of the homology modeling process (that is, template searching, target-template sequence alignment and model building) in order to build a 3D atomic model of a target protein (or protein complex). Additionally, PyMod 3 may also be used outside the homology modeling context, in order to extend PyMOL with numerous types of  functionalities. Sequence similarity searches, multiple sequence/structure alignment building, evolutionary conservation analyses, domain parsing and loop modeling can be performed in the PyMod 3/PyMOL environment.
+# PyMod 4
+PyMod 4 is an open source [PyMOL](https://github.com/schrodinger/pymol-open-source "PyMOL GitHub repository") plugin that provides an integrated environment in which sequences, alignments and structures can be maintained and analyzed together. It acts as an interface between PyMOL and several bioinformatics tools and services (for example: BLAST+, HMMER, Clustal Omega, MUSCLE, PSIPRED, MODELLER, ESMFold2 and Boltz-2). PyMod 4 extends the PyMod 3 homology modeling framework (template searching, target-template alignment and model building) to current structure-generation, complex-modeling and protein-design workflows.
+
+New in PyMod 4:
+* **Nucleic acids**: DNA and RNA are supported as molecular objects, including comparative modeling of protein–nucleic acid complexes with MODELLER.
+* **Structure retrieval and prediction**: precomputed models from the AlphaFold Protein Structure Database and ESM Atlas; template-free prediction with ESMFold2 and Boltz-2 (single proteins and protein–ligand complexes, with custom MSAs as input).
+* **Structure and interface refinement**: clash detection combined with local optimization through Open Babel.
+* **Phylogenetics**: maximum-likelihood trees with RAxML and IQ-TREE 2, visualized with the ETE toolkit.
+* **Protein design**: structure-conditioned sequence design with ESM3 and binder design with BoltzProt-1.
+
+Services accessed through an API (for example Boltz and ESM) require user-provided credentials.
 
 ## Requirements
-PyMod 3 has been tested and runs on Windows, macOS and Linux versions of PyMOL. It is compatible with incentive PyMOL builds distributed by [Schrodinger](https://pymol.org/2/ "Schrodinger website") (required PyMOL version >= 2.3.4) and open source builds (required PyMOL version >= 2.3.0).
+PyMod 4 runs on Windows, macOS and Linux versions of PyMOL, with both incentive PyMOL builds distributed by [Schrodinger](https://pymol.org/ "Schrodinger website") and open source builds. It has been tested with PyMOL 3.1.9 on Linux.
 
 ## Download
-PyMod 3 plugin file (last update: 11/11/2026): [download from here](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod3.zip "PyMod 3 plugin file for PyMOL")
+PyMod 4 plugin file (last update: 16/11/2026): [download from here](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod4.zip "PyMod 4 plugin file for PyMOL")
 
 ## Installation
-Please refer to the PyMod 3 [User's Guide](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod_users_guide.pdf "PyMod 3 User's guide") to learn how to install PyMod 3 on your system. Long story short: PyMod 3 can be installed as any other PyMOL plugin. Download the PyMod 3 plugin file (a ZIP file named `pymod3.zip`, see the link above) and use the PyMOL plugin manager (**_Plugin -> Plugin Manager_** from the menu of its main window) to install it. The external tools of PyMod 3 can be obtained and configured through an easy-to-use installer dialog which can be launched by the plugin (**_Help -> Install PyMod Components_** from the main menu of the plugin). The way to configure MODELLER in PyMod may vary according to your PyMOL version (in the User's Guide we cover different scenarios).
+Please refer to the PyMod 4 [User's Guide](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod_users_guide.pdf "PyMod 4 User's guide") to learn how to install PyMod 4 on your system. Long story short: PyMod 4 can be installed as any other PyMOL plugin. Download the PyMod 4 plugin file (a ZIP file named `pymod4.zip`, see the link above) and use the PyMOL plugin manager (**_Plugin -> Plugin Manager -> Install New Plugin_** from the menu of its main window) to install it. The external tools of PyMod 4 (BLAST+, HMMER, Clustal, MUSCLE, PSIPRED, ksdssp, IQ-TREE 2, RAxML), MODELLER and Open Babel can be obtained and configured through the installer dialog of the plugin (**_Help -> Install PyMod Components_** from its main menu). Installing MODELLER requires a MODELLER licence key.
 
 ## How to use PyMod
-A series of introductory tutorials and in-depth information about all the PyMod 3 functionalities can be found in its User's Guide.
+A series of introductory tutorials and in-depth information about all the PyMod 4 functionalities can be found in its User's Guide.
 
-User's Guide: [download from here](https://github.com/pymodproject/pymod/releases/download/v3.0/pymod_users_guide.pdf "PyMod 3 User's guide")
+User's Guide: [download from here](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod_users_guide.pdf "PyMod 4 User's guide")
 
-Home page (to be updated soon): http://schubert.bio.uniroma1.it/pymod/index.html
+PyMod 3 (previous version): [available from here](https://github.com/pymodproject/pymod/releases/tag/v3.0 "PyMod 3 release")
 
 Old PyMod 2 packages (obsolete, they only work on PyMOL 1.X): if necessary [available from here](https://github.com/pymodproject/pymod/releases/tag/v2.0 "Legacy PyMod 2.0 installers")
 
-Contact: serena.rosignoli@uniroma1.it, alessandro.paiardini@uniroma1.it
+Contact: serena.rosignoli@unimore.it, alessandro.paiardini@uniroma1.it
 
 ## Licence
-PyMod 3 is licensed under the LGPL.
+PyMod 4 is licensed under the LGPL.
