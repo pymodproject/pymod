@@ -11,7 +11,19 @@ New in PyMod 4:
 Services accessed through an API (for example Boltz and ESM) require user-provided credentials.
 
 ## Requirements
-PyMod 4 runs on Windows, macOS and Linux versions of PyMOL, with both incentive PyMOL builds distributed by [Schrodinger](https://pymol.org/ "Schrodinger website") and open source builds. It has been tested with PyMOL 3.1.9 on Linux.
+PyMod 4 runs on Windows, macOS and Linux versions of PyMOL, with both incentive PyMOL builds distributed by [Schrodinger](https://pymol.org/ "Schrodinger website") and open source builds. It has been tested with the following PyMOL versions:
+
+  | PyMOL version | Operating system |
+  | --- | --- |
+  | 3.1.9 | Ubuntu 24.04.4 LTS |
+  | 3.1.9 | macOS Tahoe 26 |
+  | 3.1.8 | Ubuntu 24.04.4 LTS |
+  | 3.1.8 | macOS Tahoe 26 |
+  | 3.1.4.1 | Ubuntu 24.04.4 LTS |
+  | 3.0 | Ubuntu 24.04.4 LTS |
+  | 2.5.8 | Ubuntu 24.04.4 LTS |
+  | 2.5 | Ubuntu 24.04.4 LTS |
+
 
 ## Download
 PyMod 4 plugin file (last update: 16/11/2026): [download from here](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod4.zip "PyMod 4 plugin file for PyMOL")
