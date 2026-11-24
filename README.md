@@ -29,12 +29,12 @@ PyMod 4 runs on Windows, macOS and Linux versions of PyMOL, with both incentive 
 PyMod 4 plugin file (last update: 16/11/2026): [download from here](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod4.zip "PyMod 4 plugin file for PyMOL")
 
 ## Installation
-Please refer to the PyMod 4 [User's Guide](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod_users_guide.pdf "PyMod 4 User's guide") to learn how to install PyMod 4 on your system. Long story short: PyMod 4 can be installed as any other PyMOL plugin. Download the PyMod 4 plugin file (a ZIP file named `pymod4.zip`, see the link above) and use the PyMOL plugin manager (**_Plugin -> Plugin Manager -> Install New Plugin_** from the menu of its main window) to install it. The external tools of PyMod 4 (BLAST+, HMMER, Clustal, MUSCLE, PSIPRED, ksdssp, IQ-TREE 2, RAxML), MODELLER and Open Babel can be obtained and configured through the installer dialog of the plugin (**_Help -> Install PyMod Components_** from its main menu). Installing MODELLER requires a MODELLER licence key.
+Please refer to the PyMod 4 [User's Guide](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod_user_guide.pdf "PyMod 4 User's guide") to learn how to install PyMod 4 on your system. Long story short: PyMod 4 can be installed as any other PyMOL plugin. Download the PyMod 4 plugin file (a ZIP file named `pymod4.zip`, see the link above) and use the PyMOL plugin manager (**_Plugin -> Plugin Manager -> Install New Plugin_** from the menu of its main window) to install it. The external tools of PyMod 4 (BLAST+, HMMER, Clustal, MUSCLE, PSIPRED, ksdssp, IQ-TREE 2, RAxML), MODELLER and Open Babel can be obtained and configured through the installer dialog of the plugin (**_Help -> Install PyMod Components_** from its main menu). Installing MODELLER requires a MODELLER licence key.
 
 ## How to use PyMod
 A series of introductory tutorials and in-depth information about all the PyMod 4 functionalities can be found in its User's Guide.
 
-User's Guide: [download from here](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod_users_guide.pdf "PyMod 4 User's guide")
+User's Guide: [download from here](https://github.com/pymodproject/pymod/releases/download/v4.0/pymod_user_guide.pdf "PyMod 4 User's guide")
 
 PyMod 3 (previous version): [available from here](https://github.com/pymodproject/pymod/releases/tag/v3.0 "PyMod 3 release")
 
